@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>SpotiWave — Musique Libre & Connect</title>
+  
+  <!-- PWA & iOS Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpotiWave">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <meta name="theme-color" content="#121212">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            spotify: {
+              green: '#1db954',
+              hover: '#1ed760',
+              dark: '#121212',
+              card: '#181818',
+              cardHover: '#282828',
+              subtext: '#b3b3b3',
+              border: '#2a2a2a'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    input[type=range] {
+      accent-color: #1db954;
+    }
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    /* Compact PC Mode */
+    body.compact-mode #sidebar,
+    body.compact-mode #page-content,
+    body.compact-mode header,
+    body.compact-mode nav.md\\:hidden {
+      display: none !important;
+    }
+    body.compact-mode {
+      height: auto !important;
+      background: transparent !important;
+    }
+    body.compact-mode footer {
+      height: 90px !important;
+      border: 1px solid #333 !important;
+      border-radius: 16px !important;
+      margin: 10px !important;
+      background: #181818 !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+    }
+  </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- DESKTOP SIDEBAR -->
+    <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-black p-4 gap-4 flex-shrink-0">
+      <div class="flex items-center gap-2 px-2 text-white font-bold text-xl tracking-tight">
+        <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black">
+          <i data-lucide="music-2" class="w-5 h-5"></i>
+        </div>
+        <span>SpotiWave</span>
+      </div>
+
+      <nav class="space-y-1 mt-3">
+        <button onclick="switchTab('home')" id="nav-btn-home" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-white font-medium hover:text-white transition bg-zinc-900">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span>Accueil</span>
+        </button>
+        <button onclick="switchTab('search')" id="nav-btn-search" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
+          <i data-lucide="search" class="w-5 h-5"></i>
+          <span>Recherche</span>
+        </button>
+        <button onclick="switchTab('library')" id="nav-btn-library" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
+          <i data-lucide="library" class="w-5 h-5"></i>
+          <span>Favoris</span>
+        </button>
+      </nav>
+
+      <!-- SPOTIFY CONNECT / SYNC STATUS -->
+      <div class="bg-zinc-900/90 rounded-xl p-3 border border-zinc-800 text-xs space-y-2">
+        <div class="flex items-center justify-between text-spotify-subtext font-bold uppercase tracking-wider text-[10px]">
+          <span>Appareils Connectés</span>
+          <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-zinc-500 animate-pulse"></span>
+        </div>
+        <div class="flex items-center gap-2 text-white font-medium">
+          <i data-lucide="cast" class="w-4 h-4 text-spotify-green"></i>
+          <span id="device-role-label">Mode : PC Principal</span>
+        </div>
+        <p class="text-[11px] text-zinc-400">Synchronisé en temps réel avec ton iPhone via WebSockets.</p>
+      </div>
+
+      <div class="flex-1 bg-spotify-dark rounded-xl p-3 flex flex-col overflow-hidden border border-zinc-900">
+        <div class="flex items-center justify-between pb-3 text-spotify-subtext text-xs uppercase font-bold tracking-wider px-1">
+          <span>Mes favoris</span>
+          <i data-lucide="heart" class="w-4 h-4 text-spotify-green fill-spotify-green"></i>
+        </div>
+        <div id="liked-sidebar-list" class="flex-1 overflow-y-auto space-y-2 custom-scroll text-sm"></div>
+      </div>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 flex flex-col bg-gradient-to-b from-zinc-900 to-spotify-dark overflow-hidden relative">
+      
+      <!-- TOP BAR -->
+      <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10 border-b border-white/5">
+        <div class="flex items-center gap-3 flex-1 max-w-md">
+          <div class="relative w-full">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
+            <input 
+              type="text" 
+              id="global-search-input"
+              placeholder="Chercher n'importe quel titre ou artiste (ex: Daft Punk, Jul, Orelsan...)" 
+              oninput="onSearchInput(this.value)"
+              class="w-full bg-zinc-800 text-sm text-white placeholder-zinc-400 pl-9 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-spotify-green transition"
+            >
+            <div id="search-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
+              <i data-lucide="loader" class="w-4 h-4 text-spotify-green animate-spin"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Compact PC Mode Toggle -->
+          <button onclick="toggleCompactMode()" title="Mode Allégé / Mini-Lecteur" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+            <i data-lucide="minimize-2" class="w-3.5 h-3.5 text-zinc-300"></i>
+            <span>Mode Allégé</span>
+          </button>
+
+          <!-- iOS Install Badge -->
+          <button onclick="showInstallGuide()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5 text-spotify-green"></i>
+            <span class="hidden sm:inline">PWA iPhone</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- SCROLLABLE PAGE BODY -->
+      <div id="page-content" class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll space-y-8 pb-32">
+        
+        <!-- SEARCH RESULTS SECTION (Shown when searching) -->
+        <section id="search-results-section" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold tracking-tight">Résultats de recherche</h2>
+            <button onclick="clearSearch()" class="text-xs text-spotify-subtext hover:text-white">Effacer</button>
+          </div>
+          <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </section>
+
+        <!-- WELCOME SECTION -->
+        <section id="home-default-section">
+          <div class="flex items-center justify-between mb-4">
+            <h1 id="greeting-text" class="text-2xl md:text-3xl font-extrabold tracking-tight">Bonne écoute</h1>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-spotify-green/10 text-spotify-green border border-spotify-green/20 font-semibold">Catalogue Illimité • 0 Pub</span>
+          </div>
+          
+          <!-- QUICK PICKS GRID -->
+          <div id="quick-picks-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </section>
+
+        <!-- FEATURED SHELF -->
+        <section id="featured-shelf-section">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold tracking-tight">Tendances Actuelles</h2>
+            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Audio HD Direct</span>
+          </div>
+          <div id="featured-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </section>
+
+        <!-- LOFI SHELF -->
+        <section id="lofi-shelf-section">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold tracking-tight">Ambiance Focus & Lofi</h2>
+          </div>
+          <div id="lofi-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- BOTTOM MINI PLAYER -->
+  <footer class="h-20 bg-zinc-950 border-t border-zinc-800/80 px-3 md:px-6 flex items-center justify-between z-20 relative select-none">
+    
+    <!-- Current Track Info -->
+    <div onclick="openMobilePlayer()" class="flex items-center gap-3 cursor-pointer flex-1 md:flex-initial max-w-[50%] md:max-w-xs">
+      <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-12 h-12 rounded-md object-cover shadow-lg border border-white/5 flex-shrink-0" alt="Cover">
+      <div class="overflow-hidden">
+        <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Prêt à jouer</p>
+        <p id="player-artist" class="text-xs text-spotify-subtext line-clamp-1">Recherchez n'importe quel titre</p>
+      </div>
+      <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2">
+        <i data-lucide="heart" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Central Controls & Scrubber -->
+    <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl px-2">
+      <div class="flex items-center gap-4">
+        <button onclick="toggleShuffle()" id="shuffle-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block">
+          <i data-lucide="shuffle" class="w-4 h-4"></i>
+        </button>
+        <button onclick="playPrev()" class="text-spotify-subtext hover:text-white transition">
+          <i data-lucide="skip-back" class="w-5 h-5"></i>
+        </button>
+        
+        <!-- PLAY / PAUSE BUTTON WITH LOADING SPINNER -->
+        <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative">
+          <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5" id="play-icon"></i>
+          <i data-lucide="loader" class="w-5 h-5 text-black animate-spin hidden" id="track-buffering-spinner"></i>
+        </button>
+
+        <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition">
+          <i data-lucide="skip-forward" class="w-5 h-5"></i>
+        </button>
+        <button onclick="toggleRepeat()" id="repeat-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block">
+          <i data-lucide="repeat" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Scrubber -->
+      <div class="w-full flex items-center gap-2 text-[11px] text-spotify-subtext font-mono">
+        <span id="current-time">0:00</span>
+        <div class="relative flex-1 flex items-center h-4 cursor-pointer" onclick="handleSeekClick(event)">
+          <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-white hover:bg-spotify-green transition-colors rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+        <span id="duration-time">0:00</span>
+      </div>
+    </div>
+
+    <!-- Volume & Controls -->
+    <div class="hidden md:flex items-center gap-3 w-48 justify-end">
+      <!-- Remote Control Mode Switcher -->
+      <button onclick="toggleDeviceRole()" id="device-role-btn" title="Basculer entre Télécommande iPhone et Lecteur Principal" class="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext flex items-center gap-1.5 border border-white/5">
+        <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
+        <span id="device-mode-text">Local</span>
+      </button>
+
+      <i data-lucide="volume-2" class="w-4 h-4 text-spotify-subtext"></i>
+      <input type="range" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" class="w-20 h-1 bg-zinc-800 rounded-lg cursor-pointer">
+    </div>
+  </footer>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="md:hidden flex items-center justify-around bg-zinc-950/95 backdrop-blur-lg border-t border-white/5 py-2 z-20">
+    <button onclick="switchTab('home')" class="flex flex-col items-center text-xs text-white gap-1">
+      <i data-lucide="home" class="w-5 h-5"></i>
+      <span>Accueil</span>
+    </button>
+    <button onclick="switchTab('search')" class="flex flex-col items-center text-xs text-spotify-subtext hover:text-white gap-1">
+      <i data-lucide="search" class="w-5 h-5"></i>
+      <span>Recherche</span>
+    </button>
+    <button onclick="switchTab('library')" class="flex flex-col items-center text-xs text-spotify-subtext hover:text-white gap-1">
+      <i data-lucide="library" class="w-5 h-5"></i>
+      <span>Favoris</span>
+    </button>
+  </nav>
+
+  <!-- FULLSCREEN PLAYER MODAL (iOS Style) -->
+  <div id="full-player-modal" class="fixed inset-0 bg-zinc-950 z-50 flex flex-col p-6 transition-transform duration-300 translate-y-full">
+    <div id="full-backdrop" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-125 -z-10 transition-all duration-700"></div>
+
+    <div class="flex items-center justify-between text-white/70 pt-2 mb-6">
+      <button onclick="closeMobilePlayer()" class="p-2 -ml-2 text-white hover:text-spotify-subtext transition">
+        <i data-lucide="chevron-down" class="w-7 h-7"></i>
+      </button>
+      <div class="text-center">
+        <p class="text-[10px] uppercase font-bold tracking-widest text-spotify-subtext">SpotiWave Connect</p>
+        <p class="text-xs font-semibold text-spotify-green flex items-center justify-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-spotify-green inline-block"></span>
+          Synchronisé
+        </p>
+      </div>
+      <button onclick="toggleLikeCurrent()" class="p-2 -mr-2">
+        <i data-lucide="heart" id="full-like-icon" class="w-6 h-6 text-spotify-subtext"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center py-4">
+      <img id="full-player-artwork" src="" class="w-72 h-72 sm:w-80 sm:h-80 rounded-2xl object-cover shadow-2xl shadow-black/80 border border-white/10" alt="Artwork">
+    </div>
+
+    <div class="my-4">
+      <h2 id="full-player-title" class="text-2xl font-black text-white line-clamp-1">Titre</h2>
+      <p id="full-player-artist" class="text-base text-spotify-subtext font-medium line-clamp-1 mt-0.5">Artiste</p>
+    </div>
+
+    <div class="space-y-1 mb-6">
+      <div class="relative w-full h-3 flex items-center cursor-pointer" onclick="handleSeekClick(event)">
+        <div class="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+          <div id="full-progress-bar" class="h-full bg-white rounded-full" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="flex justify-between text-xs font-mono text-white/60">
+        <span id="full-current-time">0:00</span>
+        <span id="full-duration-time">0:00</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between px-4 pb-8">
+      <button onclick="toggleShuffle()" class="text-white/60 hover:text-white">
+        <i data-lucide="shuffle" class="w-6 h-6"></i>
+      </button>
+      <button onclick="playPrev()" class="text-white hover:scale-110 active:scale-95 transition">
+        <i data-lucide="skip-back" class="w-8 h-8"></i>
+      </button>
+      <button onclick="togglePlay()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl">
+        <i data-lucide="play" id="full-play-icon" class="w-8 h-8 fill-black ml-1"></i>
+      </button>
+      <button onclick="playNext()" class="text-white hover:scale-110 active:scale-95 transition">
+        <i data-lucide="skip-forward" class="w-8 h-8"></i>
+      </button>
+      <button onclick="toggleRepeat()" class="text-white/60 hover:text-white">
+        <i data-lucide="repeat" class="w-6 h-6"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- PWA INSTALL GUIDE MODAL -->
+  <div id="install-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeInstallGuide()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="w-14 h-14 bg-spotify-green/20 text-spotify-green rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="share" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white">Installer sur votre iPhone</h3>
+      <p class="text-sm text-spotify-subtext text-left space-y-2">
+        <span class="block">1. Appuyez sur le bouton <strong>Partager</strong> en bas de Safari.</span>
+        <span class="block">2. Choisissez <strong>« Sur l'écran d'accueil »</strong>.</span>
+        <span class="block">3. Validez avec <strong>Ajouter</strong> en haut à droite.</span>
+      </p>
+      <button onclick="closeInstallGuide()" class="w-full py-2.5 bg-spotify-green text-black font-bold rounded-full hover:bg-spotify-hover transition">
+        Compris !
+      </button>
+    </div>
+  </div>
+
+  <!-- AUDIO ENGINE -->
+  <audio id="audio-engine" preload="auto"></audio>
+
+  <!-- CLIENT LOGIC & SPOTIFY CONNECT WEBSOCKET -->
+  <script>
+    // DEFAULT CURATED TRACKS (Fallback & Instant Play)
+    const DEFAULT_TRACKS = [
+      {
+        id: "4D7u5KF7SP8",
+        title: "Get Lucky",
+        artist: "Daft Punk ft. Pharrell Williams",
+        album: "Random Access Memories",
+        cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop",
+        duration: "4:08"
+      },
+      {
+        id: "jfKfPfyJRdk",
+        title: "Lofi Hip Hop Radio Beats",
+        artist: "Lofi Girl",
+        album: "Beats to Relax/Study to",
+        cover: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&h=500&fit=crop",
+        duration: "3:30"
+      },
+      {
+        id: "fJ9rUzIMcZQ",
+        title: "Bohemian Rhapsody",
+        artist: "Queen",
+        album: "A Night at the Opera",
+        cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop",
+        duration: "5:55"
+      },
+      {
+        id: "kXYiU_JCYtU",
+        title: "Numb",
+        artist: "Linkin Park",
+        album: "Meteora",
+        cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&h=500&fit=crop",
+        duration: "3:07"
+      },
+      {
+        id: "JGwWNGJdvx8",
+        title: "Shape of You",
+        artist: "Ed Sheeran",
+        album: "÷ (Divide)",
+        cover: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500&h=500&fit=crop",
+        duration: "3:53"
+      }
+    ];
+
+    let currentPlaylist = [...DEFAULT_TRACKS];
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+    let isShuffle = false;
+    let isRepeat = false;
+    let isBuffering = false;
+    let isRemoteOnly = false; // If true, this device acts as remote control without local audio output
+    let searchTimeout = null;
+    let likedTracks = JSON.parse(localStorage.getItem('spotiwave_likes') || '[]');
+
+    const audio = document.getElementById('audio-engine');
+    let ws = null;
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      updateGreeting();
+      renderQuickPicks();
+      renderFeaturedGrid();
+      renderLofiGrid();
+      renderLikedSidebar();
+      loadTrack(0, false);
+      initWebSocket();
+
+      // Audio Event Listeners
+      audio.addEventListener('timeupdate', onTimeUpdate);
+      audio.addEventListener('ended', onTrackEnded);
+      audio.addEventListener('waiting', () => setBuffering(true));
+      audio.addEventListener('playing', () => {
+        setBuffering(false);
+        setPlayState(true);
+      });
+      audio.addEventListener('pause', () => setPlayState(false));
+
+      // Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
+      }
+    });
+
+    // WEBSOCKET SPOTIFY CONNECT
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      
+      try {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-spotify-green";
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            handleWsMessage(msg);
+          } catch(e) {}
+        };
+
+        ws.onclose = () => {
+          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-zinc-600";
+          setTimeout(initWebSocket, 3000); // Auto reconnect
+        };
+      } catch (e) {
+        console.log("WS not available in static mode");
+      }
+    }
+
+    function handleWsMessage(msg) {
+      if (msg.type === "REMOTE_COMMAND") {
+        const cmd = msg.data.action;
+        if (cmd === 'PLAY') audio.play();
+        else if (cmd === 'PAUSE') audio.pause();
+        else if (cmd === 'NEXT') playNext();
+        else if (cmd === 'PREV') playPrev();
+        else if (cmd === 'SEEK') audio.currentTime = msg.data.position;
+      } else if (msg.type === "SYNC_STATE") {
+        const state = msg.data;
+        if (state.track) {
+          syncUIWithTrack(state.track);
+        }
+      }
+    }
+
+    function sendWs(type, data) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type, data }));
+      }
+    }
+
+    // SEARCH AGAINST REAL CATALOG
+    function onSearchInput(query) {
+      clearTimeout(searchTimeout);
+      const spinner = document.getElementById('search-spinner');
+      
+      if (!query.trim()) {
+        clearSearch();
+        return;
+      }
+
+      spinner.classList.remove('hidden');
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          spinner.classList.add('hidden');
+          if (data.success && data.tracks.length > 0) {
+            renderSearchResults(data.tracks);
+          }
+        } catch (e) {
+          spinner.classList.add('hidden');
+        }
+      }, 350);
+    }
+
+    function renderSearchResults(tracks) {
+      document.getElementById('search-results-section').classList.remove('hidden');
+      document.getElementById('home-default-section').classList.add('hidden');
+      document.getElementById('featured-shelf-section').classList.add('hidden');
+      document.getElementById('lofi-shelf-section').classList.add('hidden');
+
+      const container = document.getElementById('search-results-grid');
+      container.innerHTML = tracks.map((t, idx) => `
+        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
+          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
+            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}" loading="lazy">
+            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
+              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
+            </div>
+          </div>
+          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
+          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function clearSearch() {
+      document.getElementById('global-search-input').value = '';
+      document.getElementById('search-results-section').classList.add('hidden');
+      document.getElementById('home-default-section').classList.remove('hidden');
+      document.getElementById('featured-shelf-section').classList.remove('hidden');
+      document.getElementById('lofi-shelf-section').classList.remove('hidden');
+    }
+
+    function playRealTrack(track) {
+      currentPlaylist = [track, ...currentPlaylist.filter(t => t.id !== track.id)];
+      loadTrack(0, true);
+    }
+
+    // AUDIO PLAYBACK & STREAMING
+    function loadTrack(index, autoplay = true) {
+      currentTrackIndex = index;
+      const track = currentPlaylist[currentTrackIndex];
+      if (!track) return;
+
+      syncUIWithTrack(track);
+      setBuffering(true);
+
+      // Route through stream resolver
+      audio.src = `/api/stream/${track.id}?redirect=true`;
+
+      if (autoplay) {
+        audio.play().catch(e => {
+          setBuffering(false);
+          console.log('Autoplay:', e);
+        });
+      }
+
+      // Sync across all connected devices via WebSocket
+      sendWs('UPDATE_STATE', {
+        track: track,
+        isPlaying: autoplay,
+        position: 0
+      });
+    }
+
+    function syncUIWithTrack(track) {
+      document.getElementById('player-title').innerText = track.title;
+      document.getElementById('player-artist').innerText = track.artist;
+      document.getElementById('player-thumb').src = track.cover;
+      document.getElementById('duration-time').innerText = track.duration || "0:00";
+
+      // Full screen modal
+      document.getElementById('full-player-title').innerText = track.title;
+      document.getElementById('full-player-artist').innerText = track.artist;
+      document.getElementById('full-player-artwork').src = track.cover;
+      document.getElementById('full-backdrop').style.backgroundImage = `url('${track.cover}')`;
+      document.getElementById('full-duration-time').innerText = track.duration || "0:00";
+
+      updateLikeIcon();
+
+      // iOS Native Lock Screen & Dynamic Island
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track.title,
+          artist: track.artist,
+          album: track.album || "SpotiWave",
+          artwork: [
+            { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
+          ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => togglePlay());
+        navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+        navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+        navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+      }
+    }
+
+    function setBuffering(buffering) {
+      isBuffering = buffering;
+      const spinner = document.getElementById('track-buffering-spinner');
+      const icon = document.getElementById('play-icon');
+      if (buffering) {
+        spinner.classList.remove('hidden');
+        icon.classList.add('hidden');
+      } else {
+        spinner.classList.add('hidden');
+        icon.classList.remove('hidden');
+      }
+    }
+
+    function togglePlay() {
+      if (isRemoteOnly) {
+        sendWs('CONTROL_COMMAND', { action: isPlaying ? 'PAUSE' : 'PLAY' });
+        return;
+      }
+      if (audio.paused) {
+        audio.play();
+      } else {
+        audio.pause();
+      }
+    }
+
+    function setPlayState(playing) {
+      isPlaying = playing;
+      const playIcon = document.getElementById('play-icon');
+      const fullPlayIcon = document.getElementById('full-play-icon');
+      
+      if (playing) {
+        playIcon.setAttribute('data-lucide', 'pause');
+        fullPlayIcon.setAttribute('data-lucide', 'pause');
+        playIcon.classList.remove('ml-0.5');
+        fullPlayIcon.classList.remove('ml-1');
+      } else {
+        playIcon.setAttribute('data-lucide', 'play');
+        fullPlayIcon.setAttribute('data-lucide', 'play');
+        playIcon.classList.add('ml-0.5');
+        fullPlayIcon.classList.add('ml-1');
+      }
+      lucide.createIcons();
+
+      sendWs('UPDATE_STATE', { isPlaying: playing });
+    }
+
+    function playNext() {
+      if (isRemoteOnly) {
+        sendWs('CONTROL_COMMAND', { action: 'NEXT' });
+        return;
+      }
+      if (isShuffle) {
+        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+      } else {
+        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+      }
+      loadTrack(currentTrackIndex, true);
+    }
+
+    function playPrev() {
+      if (isRemoteOnly) {
+        sendWs('CONTROL_COMMAND', { action: 'PREV' });
+        return;
+      }
+      if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+        return;
+      }
+      currentTrackIndex = (currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+      loadTrack(currentTrackIndex, true);
+    }
+
+    function onTrackEnded() {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        playNext();
+      }
+    }
+
+    function toggleShuffle() {
+      isShuffle = !isShuffle;
+      document.getElementById('shuffle-btn').classList.toggle('text-spotify-green', isShuffle);
+    }
+
+    function toggleRepeat() {
+      isRepeat = !isRepeat;
+      document.getElementById('repeat-btn').classList.toggle('text-spotify-green', isRepeat);
+    }
+
+    function setVolume(val) {
+      audio.volume = val;
+    }
+
+    function handleSeekClick(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const width = rect.width;
+      const seekRatio = Math.max(0, Math.min(1, clickX / width));
+      if (audio.duration) {
+        const target = seekRatio * audio.duration;
+        audio.currentTime = target;
+        sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
+      }
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return "0:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function onTimeUpdate() {
+      if (!audio.duration) return;
+      const pct = (audio.currentTime / audio.duration) * 100;
+      document.getElementById('progress-bar').style.width = `${pct}%`;
+      document.getElementById('full-progress-bar').style.width = `${pct}%`;
+
+      const cur = formatTime(audio.currentTime);
+      const dur = formatTime(audio.duration);
+      document.getElementById('current-time').innerText = cur;
+      document.getElementById('full-current-time').innerText = cur;
+    }
+
+    // COMPACT PC MODE TOGGLE
+    function toggleCompactMode() {
+      document.body.classList.toggle('compact-mode');
+    }
+
+    function toggleDeviceRole() {
+      isRemoteOnly = !isRemoteOnly;
+      const btnText = document.getElementById('device-mode-text');
+      const label = document.getElementById('device-role-label');
+      if (isRemoteOnly) {
+        audio.pause();
+        btnText.innerText = "Télécommande";
+        label.innerText = "Mode : Télécommande";
+      } else {
+        btnText.innerText = "Local";
+        label.innerText = "Mode : PC Principal";
+      }
+    }
+
+    // FAVORITES
+    function toggleLikeCurrent() {
+      const track = currentPlaylist[currentTrackIndex];
+      const idx = likedTracks.findIndex(item => item.id === track.id);
+      if (idx > -1) {
+        likedTracks.splice(idx, 1);
+      } else {
+        likedTracks.push(track);
+      }
+      localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
+      updateLikeIcon();
+      renderLikedSidebar();
+    }
+
+    function updateLikeIcon() {
+      const track = currentPlaylist[currentTrackIndex];
+      const isLiked = likedTracks.some(item => item.id === track.id);
+      const btn = document.getElementById('like-btn');
+      const fullIcon = document.getElementById('full-like-icon');
+
+      if (isLiked) {
+        btn.classList.add('text-spotify-green');
+        btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5 fill-spotify-green"></i>`;
+        fullIcon.classList.add('text-spotify-green', 'fill-spotify-green');
+      } else {
+        btn.classList.remove('text-spotify-green');
+        btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5"></i>`;
+        fullIcon.classList.remove('text-spotify-green', 'fill-spotify-green');
+      }
+      lucide.createIcons();
+    }
+
+    function renderLikedSidebar() {
+      const container = document.getElementById('liked-sidebar-list');
+      if (likedTracks.length === 0) {
+        container.innerHTML = `<p class="text-xs text-zinc-500 italic p-2">Aucun favori pour l'instant</p>`;
+        return;
+      }
+      container.innerHTML = likedTracks.map((t, idx) => `
+        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="flex items-center gap-2 p-1.5 rounded-md hover:bg-white/5 cursor-pointer">
+          <img src="${t.cover}" class="w-9 h-9 rounded object-cover flex-shrink-0">
+          <div class="overflow-hidden">
+            <p class="text-xs font-semibold text-white line-clamp-1">${t.title}</p>
+            <p class="text-[10px] text-zinc-400 line-clamp-1">${t.artist}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateGreeting() {
+      const hour = new Date().getHours();
+      let text = "Bonjour";
+      if (hour >= 18) text = "Bonsoir";
+      else if (hour >= 12) text = "Bon après-midi";
+      document.getElementById('greeting-text').innerText = text;
+    }
+
+    function renderQuickPicks() {
+      const container = document.getElementById('quick-picks-grid');
+      container.innerHTML = DEFAULT_TRACKS.slice(0, 6).map((t, idx) => `
+        <div onclick="loadTrack(${idx}, true)" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/60 transition rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
+          <img src="${t.cover}" class="w-14 h-14 object-cover flex-shrink-0" alt="${t.title}">
+          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-1">${t.title}</span>
+          <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition shadow-lg flex-shrink-0">
+            <i data-lucide="play" class="w-4 h-4 fill-black ml-0.5"></i>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function renderFeaturedGrid() {
+      const container = document.getElementById('featured-tracks-grid');
+      container.innerHTML = DEFAULT_TRACKS.map((t, idx) => `
+        <div onclick="loadTrack(${idx}, true)" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
+          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
+            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}">
+            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
+              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
+            </div>
+          </div>
+          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
+          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function renderLofiGrid() {
+      const container = document.getElementById('lofi-tracks-grid');
+      const reversed = [...DEFAULT_TRACKS].reverse();
+      container.innerHTML = reversed.map((t) => {
+        const origIdx = DEFAULT_TRACKS.findIndex(item => item.id === t.id);
+        return `
+          <div onclick="loadTrack(${origIdx}, true)" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
+            <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
+              <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}">
+              <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
+                <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
+              </div>
+            </div>
+            <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
+            <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.album}</p>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function openMobilePlayer() {
+      document.getElementById('full-player-modal').classList.remove('translate-y-full');
+    }
+
+    function closeMobilePlayer() {
+      document.getElementById('full-player-modal').classList.add('translate-y-full');
+    }
+
+    function showInstallGuide() {
+      document.getElementById('install-modal').classList.remove('hidden');
+    }
+
+    function closeInstallGuide() {
+      document.getElementById('install-modal').classList.add('hidden');
+    }
+
+    function switchTab(tab) {
+      if (tab === 'search') {
+        document.getElementById('global-search-input').focus();
+      } else if (tab === 'library') {
+        document.getElementById('sidebar').classList.toggle('hidden');
+      } else {
+        clearSearch();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  </script>
+</body>
+</html>
