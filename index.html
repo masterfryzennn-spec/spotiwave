@@ -99,8 +99,8 @@
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- INVISIBLE YOUTUBE AUDIO ENGINE (Positioned on-screen but behind UI to avoid browser throttling) -->
-  <div style="position:fixed;bottom:0;right:0;width:200px;height:200px;opacity:0.001;pointer-events:none;z-index:-9999;">
+  <!-- INVISIBLE YOUTUBE AUDIO ENGINE (Placed off-screen so it CANNOT block clicks or volume slider) -->
+  <div style="position: fixed; top: -1000px; left: -1000px; width: 200px; height: 200px; pointer-events: none; opacity: 0.001;">
     <div id="yt-player-box"></div>
   </div>
 
@@ -261,10 +261,10 @@
   </div>
 
   <!-- BOTTOM MINI PLAYER -->
-  <footer class="h-20 bg-zinc-950 border-t border-zinc-800/80 px-3 md:px-6 flex items-center justify-between z-20 relative select-none">
+  <footer class="h-20 bg-zinc-950 border-t border-zinc-800/80 px-3 md:px-6 flex items-center justify-between z-30 relative">
     
     <!-- Current Track Info -->
-    <div onclick="openMobilePlayer()" class="flex items-center gap-3 cursor-pointer flex-1 md:flex-initial max-w-[50%] md:max-w-xs">
+    <div onclick="openMobilePlayer()" class="flex items-center gap-3 cursor-pointer flex-1 md:flex-initial max-w-[50%] md:max-w-xs select-none">
       <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-12 h-12 rounded-md object-cover shadow-lg border border-white/5 flex-shrink-0" alt="Cover">
       <div class="overflow-hidden">
         <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Sélectionnez un titre</p>
@@ -278,27 +278,27 @@
     <!-- Central Controls & Scrubber -->
     <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl px-2">
       <div class="flex items-center gap-4">
-        <button onclick="toggleShuffle()" id="shuffle-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block">
+        <button onclick="toggleShuffle()" id="shuffle-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block cursor-pointer p-1">
           <i data-lucide="shuffle" class="w-4 h-4"></i>
         </button>
-        <button onclick="playPrev()" class="text-spotify-subtext hover:text-white transition">
+        <button onclick="playPrev()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95">
           <i data-lucide="skip-back" class="w-5 h-5"></i>
         </button>
         
         <!-- PLAY / PAUSE BUTTON WITH DIRECT SVGS -->
-        <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative">
+        <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative cursor-pointer z-40">
           <!-- Play Icon -->
-          <svg id="svg-play" class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          <svg id="svg-play" class="w-5 h-5 fill-black ml-0.5 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           <!-- Pause Icon -->
-          <svg id="svg-pause" class="w-5 h-5 fill-black hidden" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <svg id="svg-pause" class="w-5 h-5 fill-black hidden pointer-events-none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           <!-- Spinner -->
-          <svg id="svg-spinner" class="w-5 h-5 animate-spin hidden text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+          <svg id="svg-spinner" class="w-5 h-5 animate-spin hidden text-black pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
         </button>
 
-        <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition">
+        <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95">
           <i data-lucide="skip-forward" class="w-5 h-5"></i>
         </button>
-        <button onclick="toggleRepeat()" id="repeat-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block">
+        <button onclick="toggleRepeat()" id="repeat-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block cursor-pointer p-1">
           <i data-lucide="repeat" class="w-4 h-4"></i>
         </button>
       </div>
@@ -315,14 +315,14 @@
     </div>
 
     <!-- Volume & Controls -->
-    <div class="hidden md:flex items-center gap-3 w-48 justify-end">
-      <button onclick="toggleDeviceRole()" id="device-role-btn" title="Basculer entre Télécommande iPhone et Lecteur Principal" class="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext flex items-center gap-1.5 border border-white/5">
+    <div class="hidden md:flex items-center gap-3 w-48 justify-end z-30">
+      <button onclick="toggleDeviceRole()" id="device-role-btn" title="Basculer entre Télécommande iPhone et Lecteur Principal" class="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext flex items-center gap-1.5 border border-white/5 cursor-pointer">
         <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
         <span id="device-mode-text">Local</span>
       </button>
 
       <i data-lucide="volume-2" class="w-4 h-4 text-spotify-subtext"></i>
-      <input type="range" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" class="w-20 h-1 bg-zinc-800 rounded-lg cursor-pointer">
+      <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" onchange="setVolume(this.value)" class="w-20 h-1.5 bg-zinc-800 rounded-lg cursor-pointer" style="pointer-events: auto; touch-action: manipulation;">
     </div>
   </footer>
 
@@ -343,7 +343,7 @@
   </nav>
 
   <!-- FULLSCREEN PLAYER MODAL (iOS Style) -->
-  <div id="full-player-modal" class="fixed inset-0 bg-zinc-950 z-50 flex flex-col p-6 transition-transform duration-300 translate-y-full">
+  <div id="full-player-modal" class="fixed inset-0 bg-zinc-950 z-50 flex flex-col p-6 transition-transform duration-300 translate-y-full pointer-events-none">
     <div id="full-backdrop" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-125 -z-10 transition-all duration-700"></div>
 
     <div class="flex items-center justify-between text-white/70 pt-2 mb-6">
@@ -860,9 +860,11 @@
       document.getElementById('repeat-btn').classList.toggle('text-spotify-green', isRepeat);
     }
 
+    let currentVolume = 80;
     function setVolume(val) {
+      currentVolume = Math.round(val * 100);
       if (ytPlayer && ytPlayer.setVolume) {
-        try { ytPlayer.setVolume(val * 100); } catch(e) {}
+        try { ytPlayer.setVolume(currentVolume); } catch(e) {}
       }
     }
 
@@ -1033,11 +1035,13 @@
     }
 
     function openMobilePlayer() {
-      document.getElementById('full-player-modal').classList.remove('translate-y-full');
+      const modal = document.getElementById('full-player-modal');
+      modal.classList.remove('translate-y-full', 'pointer-events-none');
     }
 
     function closeMobilePlayer() {
-      document.getElementById('full-player-modal').classList.add('translate-y-full');
+      const modal = document.getElementById('full-player-modal');
+      modal.classList.add('translate-y-full', 'pointer-events-none');
     }
 
     function showInstallGuide() {
