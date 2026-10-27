@@ -579,8 +579,28 @@
         <button onclick="closeConnectModal()" class="text-zinc-400 hover:text-white p-1">✕</button>
       </div>
 
+      <!-- Session Mode Badge & Share -->
+      <div class="p-3 rounded-xl bg-zinc-800/80 border border-white/10 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Type de Session</span>
+          <span id="session-type-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/20 text-blue-400">Écoute Privée (Solo)</span>
+        </div>
+        <p id="session-desc-text" class="text-xs text-zinc-300">
+          Chacun écoute sa propre musique de son côté en toute indépendance.
+        </p>
+        <div class="flex items-center gap-2 pt-1">
+          <button onclick="copyConnectShareLink()" id="session-share-btn" class="flex-1 py-1.5 px-3 bg-spotify-green hover:bg-spotify-hover text-black text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+            <span>Lier mon iPhone à ce PC</span>
+          </button>
+          <button onclick="switchToPrivateSession()" id="session-solo-btn" class="py-1.5 px-3 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold rounded-lg transition hidden cursor-pointer" title="Revenir en solo">
+            Quitter
+          </button>
+        </div>
+      </div>
+
       <!-- Active Speaker Info -->
-      <div class="p-3 rounded-xl bg-zinc-800/80 border border-spotify-green/30 flex items-center justify-between">
+      <div class="p-3 rounded-xl bg-zinc-800/60 border border-spotify-green/30 flex items-center justify-between">
         <div class="truncate mr-2">
           <p class="text-[10px] text-spotify-green font-bold uppercase tracking-wider">Diffuseur Actif</p>
           <p id="modal-active-speaker-name" class="text-xs font-bold text-white truncate">Chargement...</p>
@@ -592,8 +612,8 @@
 
       <!-- Devices List -->
       <div class="space-y-1.5">
-        <p class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Appareils Détectés (<span id="devices-count">1</span>)</p>
-        <div id="devices-list-container" class="space-y-1.5 max-h-40 overflow-y-auto custom-scroll"></div>
+        <p class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Appareils dans cette session (<span id="devices-count">1</span>)</p>
+        <div id="devices-list-container" class="space-y-1.5 max-h-36 overflow-y-auto custom-scroll"></div>
       </div>
 
       <!-- Jam Mode Switch -->
@@ -603,7 +623,7 @@
             <span>Mode Jam (Multi-Room)</span>
             <span class="text-[9px] px-1 bg-amber-500/20 text-amber-400 font-bold rounded">BÊTA</span>
           </p>
-          <p class="text-[10px] text-zinc-400">Jouer en simultané sur tous les appareils</p>
+          <p class="text-[10px] text-zinc-400">Jouer en simultané sur les appareils liés</p>
         </div>
         <button onclick="toggleJamMode()" id="jam-mode-toggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-zinc-700 transition cursor-pointer">
           <span id="jam-toggle-knob" class="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
@@ -654,6 +674,20 @@
     let isBuffering = false;
     let searchTimeout = null;
     let progressTimer = null;
+
+    // SPOTIWAVE SESSION & CONNECT ROOM MANAGEMENT
+    const urlParams = new URLSearchParams(window.location.search);
+    let roomFromUrl = urlParams.get('room') || urlParams.get('session');
+    
+    // Each user has their own private session ID by default!
+    let mySessionId = localStorage.getItem('spotiwave_session_id');
+    if (roomFromUrl) {
+      mySessionId = roomFromUrl.trim().toLowerCase();
+      localStorage.setItem('spotiwave_session_id', mySessionId);
+    } else if (!mySessionId) {
+      mySessionId = 'solo_' + Math.random().toString(36).substring(2, 8);
+      localStorage.setItem('spotiwave_session_id', mySessionId);
+    }
 
     // SPOTIWAVE CONNECT & MULTI-DEVICE STATE
     let myDeviceId = localStorage.getItem('spotiwave_device_id');
@@ -1745,6 +1779,42 @@
       const jamToggle = document.getElementById('jam-mode-toggle');
       const jamKnob = document.getElementById('jam-toggle-knob');
 
+      const isSolo = mySessionId.startsWith('solo_');
+      const sessionBadge = document.getElementById('session-type-badge');
+      const sessionDesc = document.getElementById('session-desc-text');
+      const sessionSoloBtn = document.getElementById('session-solo-btn');
+      const sessionShareBtn = document.getElementById('session-share-btn');
+
+      if (sessionBadge) {
+        if (isSolo) {
+          sessionBadge.innerText = "Écoute Privée (Solo)";
+          sessionBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/20 text-blue-400";
+        } else {
+          sessionBadge.innerText = `Session Liée (${mySessionId.substring(0, 8)})`;
+          sessionBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-spotify-green/20 text-spotify-green";
+        }
+      }
+
+      if (sessionDesc) {
+        if (isSolo) {
+          sessionDesc.innerText = "Chacun écoute sa propre musique de son côté en toute indépendance.";
+        } else {
+          sessionDesc.innerText = "Vos appareils sont synchronisés en direct (PC / iPhone).";
+        }
+      }
+
+      if (sessionSoloBtn) {
+        if (isSolo) sessionSoloBtn.classList.add('hidden');
+        else sessionSoloBtn.classList.remove('hidden');
+      }
+
+      if (sessionShareBtn) {
+        const shareLabel = sessionShareBtn.querySelector('span');
+        if (shareLabel) {
+          shareLabel.innerText = isSolo ? "Lier mon iPhone à ce PC" : "Partager cette session";
+        }
+      }
+
       if (renameInput) renameInput.value = myDeviceName;
       if (countEl) countEl.innerText = availableDevices.length || 1;
 
@@ -1817,8 +1887,49 @@
             `;
           }).join('');
         }
-        lucide.createIcons();
+        refreshIcons();
       }
+    }
+
+    function copyConnectShareLink() {
+      // If currently solo, create a dedicated paired room
+      if (mySessionId.startsWith('solo_')) {
+        const pairedRoom = 'room_' + Math.random().toString(36).substring(2, 8);
+        switchSession(pairedRoom);
+      }
+      const shareUrl = `${window.location.origin}/?room=${encodeURIComponent(mySessionId)}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToast("Lien copié ! Ouvrez-le sur votre iPhone pour lier vos appareils 📲");
+        }).catch(() => {
+          prompt("Copiez ce lien pour lier votre iPhone ou un ami :", shareUrl);
+        });
+      } else {
+        prompt("Copiez ce lien pour lier votre iPhone ou un ami :", shareUrl);
+      }
+    }
+
+    function switchToPrivateSession() {
+      const soloRoom = 'solo_' + Math.random().toString(36).substring(2, 8);
+      switchSession(soloRoom);
+      showToast("Vous êtes repassé en écoute privée (Solo)");
+    }
+
+    function switchSession(newSessionId) {
+      if (!newSessionId) return;
+      mySessionId = newSessionId.trim().toLowerCase();
+      localStorage.setItem('spotiwave_session_id', mySessionId);
+      const newUrl = mySessionId.startsWith('solo_') 
+        ? window.location.pathname 
+        : `${window.location.pathname}?room=${encodeURIComponent(mySessionId)}`;
+      window.history.replaceState({}, '', newUrl);
+
+      if (ws) {
+        try { ws.close(); } catch(e) {}
+      }
+      initWebSocket();
+      updateConnectUI();
+      renderDevicesModal();
     }
 
     function transferToMe() {
@@ -1934,7 +2045,7 @@
     // WEBSOCKETS
     function initWebSocket() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(mySessionId)}`;
       try {
         ws = new WebSocket(wsUrl);
         ws.onopen = () => {
