@@ -99,9 +99,10 @@
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- INVISIBLE YOUTUBE AUDIO ENGINE -->
+  <!-- INVISIBLE YOUTUBE AUDIO ENGINE & IOS AUDIO SESSION KEEPER -->
   <div style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0.01; z-index: -1;">
     <div id="yt-player-box"></div>
+    <audio id="ios-audio-keeper" loop playsinline preload="auto" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -236,6 +237,10 @@
                     <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
                     <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
                   </svg>
+                </button>
+                <button onclick="refreshCurrentPlaylistCovers()" id="refresh-covers-btn" class="px-3.5 py-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer shadow-md" title="Mettre à jour les pochettes de chaque chanson">
+                  <i data-lucide="image" class="w-4 h-4 text-spotify-green"></i>
+                  <span>Pochettes</span>
                 </button>
                 <button onclick="deleteCurrentPlaylistView()" id="delete-playlist-btn" class="p-2.5 rounded-full bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition cursor-pointer" title="Supprimer la playlist">
                   <i data-lucide="trash-2" class="w-5 h-5"></i>
@@ -1006,6 +1011,63 @@
 
       renderPlaylistTracksTable(pl.tracks || [], false);
       refreshIcons();
+      autoRepairPlaylistCovers(pl);
+    }
+
+    let repairingCovers = false;
+    async function refreshCurrentPlaylistCovers() {
+      const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+      if (!pl || !pl.tracks || pl.tracks.length === 0) return;
+      showToast("Actualisation des pochettes d'albums...");
+      await autoRepairPlaylistCovers(pl, true);
+      showToast("Pochettes d'albums actualisées !");
+    }
+
+    async function autoRepairPlaylistCovers(pl, forceAll = false) {
+      if (!pl || !pl.tracks || pl.tracks.length === 0 || repairingCovers) return;
+      const targetPlId = pl.id;
+      
+      const toRepair = [];
+      pl.tracks.forEach((t, idx) => {
+        const isCollage = t.cover && (t.cover === pl.cover || t.cover.includes('photo-1614613535308'));
+        if (forceAll || !t.cover || isCollage) {
+          toRepair.push({ track: t, index: idx });
+        }
+      });
+
+      if (toRepair.length === 0) return;
+      repairingCovers = true;
+
+      for (let i = 0; i < toRepair.length; i += 3) {
+        if (activeViewingPlaylistId !== targetPlId) break;
+        const batch = toRepair.slice(i, i + 3);
+        await Promise.all(batch.map(async item => {
+          try {
+            const q = `${item.track.title} ${item.track.artist}`;
+            const res = await fetch(`/api/resolve?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if (data.success && data.track && data.track.cover) {
+              item.track.cover = data.track.cover;
+              if (data.track.id && !item.track.id) item.track.id = data.track.id;
+              if (data.track.duration) item.track.duration = formatDuration(data.track.duration);
+
+              if (activeViewingPlaylistId === targetPlId) {
+                const container = document.getElementById('playlist-tracks-container');
+                if (container) {
+                  const rows = container.querySelectorAll('.group');
+                  if (rows[item.index]) {
+                    const img = rows[item.index].querySelector('img');
+                    if (img) img.src = data.track.cover;
+                  }
+                }
+              }
+            }
+          } catch (e) {}
+        }));
+      }
+
+      localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      repairingCovers = false;
     }
 
     function renderPlaylistTracksTable(tracks, isLikedView) {
@@ -1395,11 +1457,13 @@
 
     function saveResolvedTrack(resolvedTrack) {
       if (!resolvedTrack || !resolvedTrack.id) return;
+      const targetTitle = (resolvedTrack.title || '').trim().toLowerCase();
       let modified = false;
       userPlaylists.forEach(pl => {
         if (pl.tracks) {
           pl.tracks.forEach(t => {
-            if (t.title === resolvedTrack.title && t.artist === resolvedTrack.artist) {
+            const tTitle = (t.title || '').trim().toLowerCase();
+            if (tTitle === targetTitle) {
               t.id = resolvedTrack.id;
               if (resolvedTrack.cover) t.cover = resolvedTrack.cover;
               if (resolvedTrack.duration) t.duration = resolvedTrack.duration;
@@ -1412,13 +1476,27 @@
         localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
       }
       likedTracks.forEach(t => {
-        if (t.title === resolvedTrack.title && t.artist === resolvedTrack.artist) {
+        const tTitle = (t.title || '').trim().toLowerCase();
+        if (tTitle === targetTitle) {
           t.id = resolvedTrack.id;
           if (resolvedTrack.cover) t.cover = resolvedTrack.cover;
           if (resolvedTrack.duration) t.duration = resolvedTrack.duration;
           localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
         }
       });
+
+      // Update thumbnail image in the current playlist DOM table in real-time
+      const container = document.getElementById('playlist-tracks-container');
+      if (container && resolvedTrack.cover) {
+        const rows = container.querySelectorAll('.group');
+        rows.forEach(row => {
+          const titleEl = row.querySelector('p.text-sm');
+          if (titleEl && titleEl.innerText.trim().toLowerCase() === targetTitle) {
+            const img = row.querySelector('img');
+            if (img) img.src = resolvedTrack.cover;
+          }
+        });
+      }
     }
 
     function refreshIcons() {
@@ -1466,14 +1544,25 @@
           artist: track.artist,
           album: track.album || "SpotiWave Live",
           artwork: [
-            { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
+            { src: track.cover, sizes: '512x512', type: 'image/jpeg' },
+            { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
+            { src: track.cover, sizes: '96x96', type: 'image/jpeg' }
           ]
         });
 
-        navigator.mediaSession.setActionHandler('play', () => togglePlay());
-        navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (!isPlaying) togglePlay();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (isPlaying) togglePlay();
+        });
         navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
         navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+        try {
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime != null) seekTo(details.seekTime);
+          });
+        } catch(e) {}
       }
     }
 
@@ -1558,6 +1647,19 @@
         } else {
           pa2.classList.add('hidden');
           p2.classList.remove('hidden');
+        }
+      }
+
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+      }
+
+      const keeper = document.getElementById('ios-audio-keeper');
+      if (keeper) {
+        if (playing) {
+          keeper.play().catch(() => {});
+        } else {
+          keeper.pause();
         }
       }
 
@@ -1759,6 +1861,16 @@
               document.getElementById('full-current-time').innerText = formatTime(cur);
               document.getElementById('duration-time').innerText = formatTime(dur);
               document.getElementById('full-duration-time').innerText = formatTime(dur);
+
+              if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                try {
+                  navigator.mediaSession.setPositionState({
+                    duration: dur,
+                    playbackRate: 1.0,
+                    position: Math.min(cur, dur)
+                  });
+                } catch(e) {}
+              }
             }
           } catch(e) {}
         } else {
@@ -1787,6 +1899,15 @@
         progressTimer = null;
       }
     }
+
+    // Auto-resume audio if paused by mobile OS when returning from background
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && isPlaying) {
+        if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) {
+          try { ytPlayer.playVideo(); } catch(e) {}
+        }
+      }
+    });
 
     let toastTimer = null;
     function showToast(text) {

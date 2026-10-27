@@ -4,6 +4,7 @@ import time
 import socket
 import re
 import urllib.request
+import urllib.parse
 import json
 from typing import Dict, List, Optional
 from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
@@ -224,9 +225,44 @@ async def import_spotify(url: str = Query(..., min_length=1)):
         if visual.get('image') and len(visual['image']) > 0:
             cover = visual['image'][-1].get('url', cover)
 
-        tracks = []
         track_list = entity.get('trackList', [])
+        
+        # Extract individual track IDs from Spotify URIs
+        track_ids = []
         for t in track_list:
+            uri = t.get('uri', '')
+            if 'track:' in uri:
+                track_ids.append(uri.split('track:')[-1])
+            else:
+                track_ids.append(None)
+
+        def fetch_single_thumb(tid):
+            if not tid:
+                return tid, None
+            try:
+                target_url = f"https://open.spotify.com/track/{tid}"
+                u = f"https://open.spotify.com/oembed?url={urllib.parse.quote(target_url, safe='')}"
+                r = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                res = urllib.request.urlopen(r, timeout=3.0)
+                d = json.loads(res.read())
+                return tid, d.get('thumbnail_url')
+            except Exception:
+                return tid, None
+
+        thumb_map = {}
+        valid_tids = [tid for tid in track_ids if tid]
+        if valid_tids:
+            try:
+                from concurrent.futures import ThreadPoolExecutor
+                with ThreadPoolExecutor(max_workers=min(20, len(valid_tids))) as executor:
+                    for tid, thumb in executor.map(fetch_single_thumb, valid_tids):
+                        if thumb:
+                            thumb_map[tid] = thumb
+            except Exception:
+                pass
+
+        tracks = []
+        for i, t in enumerate(track_list):
             raw_dur = t.get('duration')
             formatted_dur = "3:30"
             if raw_dur:
@@ -240,11 +276,15 @@ async def import_spotify(url: str = Query(..., min_length=1)):
                 except Exception:
                     formatted_dur = "3:30"
 
+            tid = track_ids[i] if i < len(track_ids) else None
+            # Use individual album cover if available; otherwise fallback to playlist cover
+            t_cover = thumb_map.get(tid) or cover
+
             tracks.append({
                 'title': t.get('title', 'Titre'),
                 'artist': t.get('subtitle', 'Artiste'),
                 'duration': formatted_dur,
-                'cover': cover
+                'cover': t_cover
             })
             
         return JSONResponse(content={
