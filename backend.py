@@ -207,10 +207,23 @@ async def import_spotify(url: str = Query(..., min_length=1)):
         tracks = []
         track_list = entity.get('trackList', [])
         for t in track_list:
+            raw_dur = t.get('duration')
+            formatted_dur = "3:30"
+            if raw_dur:
+                try:
+                    num_ms = int(raw_dur)
+                    if num_ms > 1000:
+                        total_secs = num_ms // 1000
+                    else:
+                        total_secs = num_ms
+                    formatted_dur = f"{total_secs // 60}:{total_secs % 60:02d}"
+                except Exception:
+                    formatted_dur = "3:30"
+
             tracks.append({
                 'title': t.get('title', 'Titre'),
                 'artist': t.get('subtitle', 'Artiste'),
-                'duration': t.get('duration', '3:30'),
+                'duration': formatted_dur,
                 'cover': cover
             })
             
@@ -228,23 +241,17 @@ async def import_spotify(url: str = Query(..., min_length=1)):
 @app.get("/api/resolve")
 async def resolve_track_query(q: str = Query(..., min_length=1)):
     try:
+        # First attempt: search exact query in songs
         results = ytm.search(q, filter="songs")
+        if not results:
+            # Fallback attempt: search in general
+            results = ytm.search(q)
         if results and len(results) > 0:
-            track = format_track(results[0])
-            if track:
-                return JSONResponse(content={"success": True, "track": track})
+            for item in results:
+                track = format_track(item)
+                if track:
+                    return JSONResponse(content={"success": True, "track": track})
         return JSONResponse(status_code=404, content={"success": False, "error": "Titre introuvable"})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
-
-    try:
-        results = ytm.search(q, filter="songs")
-        tracks = []
-        for item in results[:25]:
-            formatted = format_track(item)
-            if formatted:
-                tracks.append(formatted)
-        return JSONResponse(content={"success": True, "tracks": tracks})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
@@ -418,7 +425,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def get_index():
-    return FileResponse(os.path.join(DIR_PATH, "index.html"))
+    response = FileResponse(os.path.join(DIR_PATH, "index.html"))
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.get("/manifest.json")
 async def get_manifest():
@@ -426,7 +435,9 @@ async def get_manifest():
 
 @app.get("/sw.js")
 async def get_sw():
-    return FileResponse(os.path.join(DIR_PATH, "sw.js"), media_type="application/javascript")
+    response = FileResponse(os.path.join(DIR_PATH, "sw.js"), media_type="application/javascript")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.get("/icon.svg")
 async def get_icon():

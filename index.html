@@ -727,18 +727,23 @@
         setPlayState(true);
         startProgressTracking();
       } else if (event.data === 2) { // PAUSED
+        setBuffering(false);
         setPlayState(false);
         stopProgressTracking();
       } else if (event.data === 3) { // BUFFERING
         setBuffering(true);
       } else if (event.data === 0) { // ENDED
+        setBuffering(false);
         stopProgressTracking();
         onTrackEnded();
+      } else if (event.data === 5) { // CUED
+        setBuffering(false);
       }
     }
 
     function onPlayerError(e) {
       setBuffering(false);
+      showToast("Titre non disponible, passage au suivant...");
       setTimeout(playNext, 1200);
     }
 
@@ -889,6 +894,7 @@
       document.getElementById('delete-playlist-btn').classList.add('hidden');
 
       renderPlaylistTracksTable(likedTracks, true);
+      refreshIcons();
     }
 
     function viewPlaylist(playlistId) {
@@ -914,6 +920,7 @@
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
 
       renderPlaylistTracksTable(pl.tracks || [], false);
+      refreshIcons();
     }
 
     function renderPlaylistTracksTable(tracks, isLikedView) {
@@ -934,8 +941,8 @@
             </div>
           </div>
           <div class="flex items-center gap-4 text-xs font-mono text-zinc-400">
-            <span>${t.duration || '3:30'}</span>
-            <button onclick="event.stopPropagation(); removeTrackFromCurrentPlaylist(${idx}, ${isLikedView})" class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1" title="Retirer">
+            <span>${formatDuration(t.duration)}</span>
+            <button onclick="event.stopPropagation(); removeTrackFromCurrentPlaylist(${idx}, ${isLikedView})" class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 cursor-pointer" title="Retirer">
               ✕
             </button>
           </div>
@@ -953,22 +960,8 @@
       }
       if (!tracks || tracks.length === 0) return;
 
-      const track = tracks[idx];
-      // If track has no YouTube video ID (e.g. from Spotify import), resolve it on the fly!
-      if (!track.id || track.id.length > 15) {
-        showToast("Résolution audio...");
-        try {
-          const res = await fetch(`/api/resolve?q=${encodeURIComponent(track.title + ' ' + track.artist)}`);
-          const data = await res.json();
-          if (data.success && data.track) {
-            track.id = data.track.id;
-            track.cover = data.track.cover;
-          }
-        } catch (e) {}
-      }
-
       currentPlaylist = tracks;
-      loadTrack(idx, true);
+      await loadTrack(idx, true);
     }
 
     function playCurrentPlaylistView(shuffle = false) {
@@ -1234,12 +1227,58 @@
       loadTrack(0, true);
     }
 
-    function loadTrack(index, autoplay = true) {
+    async function loadTrack(index, autoplay = true) {
       currentTrackIndex = index;
       const track = currentPlaylist[currentTrackIndex];
       if (!track) return;
 
+      if (track.duration) {
+        track.duration = formatDuration(track.duration);
+      }
+
       syncUIWithTrack(track);
+
+      // RESOLVE YOUTUBE ID IF MISSING (e.g. from Spotify import)
+      if (!track.id || track.id.length < 5 || track.id.length > 15) {
+        setBuffering(true);
+        showToast(`Recherche audio : ${track.title}...`);
+        try {
+          const query = `${track.title} ${track.artist}`.trim();
+          const res = await fetch(`/api/resolve?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          if (data.success && data.track && data.track.id) {
+            track.id = data.track.id;
+            if (data.track.cover && (!track.cover || track.cover.includes('unsplash'))) {
+              track.cover = data.track.cover;
+            }
+            if (data.track.duration) {
+              track.duration = formatDuration(data.track.duration);
+            }
+            syncUIWithTrack(track);
+            saveResolvedTrack(track);
+          } else {
+            // Fallback search
+            const searchRes = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            const searchData = await searchRes.json();
+            if (searchData.success && searchData.tracks && searchData.tracks.length > 0) {
+              const best = searchData.tracks[0];
+              track.id = best.id;
+              if (best.cover) track.cover = best.cover;
+              if (best.duration) track.duration = formatDuration(best.duration);
+              syncUIWithTrack(track);
+              saveResolvedTrack(track);
+            }
+          }
+        } catch(e) {
+          console.warn("Resolve error:", e);
+        }
+      }
+
+      if (!track.id) {
+        setBuffering(false);
+        showToast("Impossible de trouver une source audio pour ce titre");
+        return;
+      }
 
       if (amISpeaker()) {
         setBuffering(true);
@@ -1269,7 +1308,42 @@
       }
     }
 
+    function saveResolvedTrack(resolvedTrack) {
+      if (!resolvedTrack || !resolvedTrack.id) return;
+      let modified = false;
+      userPlaylists.forEach(pl => {
+        if (pl.tracks) {
+          pl.tracks.forEach(t => {
+            if (t.title === resolvedTrack.title && t.artist === resolvedTrack.artist) {
+              t.id = resolvedTrack.id;
+              if (resolvedTrack.cover) t.cover = resolvedTrack.cover;
+              if (resolvedTrack.duration) t.duration = resolvedTrack.duration;
+              modified = true;
+            }
+          });
+        }
+      });
+      if (modified) {
+        localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      }
+      likedTracks.forEach(t => {
+        if (t.title === resolvedTrack.title && t.artist === resolvedTrack.artist) {
+          t.id = resolvedTrack.id;
+          if (resolvedTrack.cover) t.cover = resolvedTrack.cover;
+          if (resolvedTrack.duration) t.duration = resolvedTrack.duration;
+          localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
+        }
+      });
+    }
+
+    function refreshIcons() {
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        try { lucide.createIcons(); } catch(e) {}
+      }
+    }
+
     function loadTrackDirect(track, autoplay) {
+      if (!track || !track.id) return;
       try {
         currentPlayingVideoId = track.id;
         if (autoplay) {
@@ -1281,22 +1355,25 @@
         }
       } catch (e) {
         console.warn("Direct play error:", e);
+        setBuffering(false);
       }
     }
 
     function syncUIWithTrack(track) {
+      const dur = formatDuration(track.duration);
       document.getElementById('player-title').innerText = track.title;
       document.getElementById('player-artist').innerText = track.artist;
-      document.getElementById('player-thumb').src = track.cover;
-      document.getElementById('duration-time').innerText = track.duration || "3:30";
+      document.getElementById('player-thumb').src = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop';
+      document.getElementById('duration-time').innerText = dur;
 
       document.getElementById('full-player-title').innerText = track.title;
       document.getElementById('full-player-artist').innerText = track.artist;
-      document.getElementById('full-player-artwork').src = track.cover;
-      document.getElementById('full-backdrop').style.backgroundImage = `url('${track.cover}')`;
-      document.getElementById('full-duration-time').innerText = track.duration || "3:30";
+      document.getElementById('full-player-artwork').src = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop';
+      document.getElementById('full-backdrop').style.backgroundImage = `url('${track.cover || ""}')`;
+      document.getElementById('full-duration-time').innerText = dur;
 
       updateLikeIcon();
+      refreshIcons();
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -1315,8 +1392,10 @@
       }
     }
 
+    let bufferingSafetyTimeout = null;
     function setBuffering(buffering) {
       isBuffering = buffering;
+      clearTimeout(bufferingSafetyTimeout);
       const spinner = document.getElementById('svg-spinner');
       const play = document.getElementById('svg-play');
       const pause = document.getElementById('svg-pause');
@@ -1326,6 +1405,15 @@
         spinner.classList.remove('hidden');
         if (play) play.classList.add('hidden');
         if (pause) pause.classList.add('hidden');
+        bufferingSafetyTimeout = setTimeout(() => {
+          isBuffering = false;
+          spinner.classList.add('hidden');
+          if (isPlaying) {
+            if (pause) pause.classList.remove('hidden');
+          } else {
+            if (play) play.classList.remove('hidden');
+          }
+        }, 6000);
       } else {
         spinner.classList.add('hidden');
         if (isPlaying) {
@@ -1508,9 +1596,26 @@
       }
     }
 
+    function formatDuration(val) {
+      if (!val) return "3:30";
+      if (typeof val === 'string' && val.includes(':')) return val;
+      const num = parseInt(val, 10);
+      if (isNaN(num)) return "3:30";
+      const totalSecs = num > 1000 ? Math.round(num / 1000) : num;
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
     function parseDurationSeconds(str) {
       if (!str) return 210;
-      if (typeof str === 'number') return str;
+      if (typeof str === 'number') {
+        return str > 1000 ? Math.round(str / 1000) : str;
+      }
+      if (!isNaN(str) && !str.includes(':')) {
+        const n = parseInt(str, 10);
+        return n > 1000 ? Math.round(n / 1000) : n;
+      }
       const parts = str.split(':').map(Number);
       if (parts.length === 2) return (parts[0] * 60) + (parts[1] || 0);
       if (parts.length === 3) return (parts[0] * 3600) + (parts[1] * 60) + (parts[2] || 0);
