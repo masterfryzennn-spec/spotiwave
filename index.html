@@ -53,7 +53,7 @@
       user-select: none;
     }
     .custom-scroll::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
     .custom-scroll::-webkit-scrollbar-thumb {
       background: #333;
@@ -99,7 +99,7 @@
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- INVISIBLE YOUTUBE AUDIO ENGINE (Placed off-screen so it CANNOT block clicks or volume slider) -->
+  <!-- INVISIBLE YOUTUBE AUDIO ENGINE -->
   <div style="position: fixed; top: -1000px; left: -1000px; width: 200px; height: 200px; pointer-events: none; opacity: 0.001;">
     <div id="yt-player-box"></div>
   </div>
@@ -108,7 +108,7 @@
   <div class="flex-1 flex overflow-hidden">
     
     <!-- DESKTOP SIDEBAR -->
-    <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-black p-4 gap-4 flex-shrink-0">
+    <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-black p-4 gap-3 flex-shrink-0">
       <div class="flex items-center gap-2 px-2 text-white font-bold text-xl tracking-tight">
         <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black">
           <i data-lucide="music-2" class="w-5 h-5"></i>
@@ -116,40 +116,49 @@
         <span>SpotiWave</span>
       </div>
 
-      <nav class="space-y-1 mt-3">
-        <button onclick="switchTab('home')" id="nav-btn-home" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-white font-medium hover:text-white transition bg-zinc-900">
+      <nav class="space-y-1 mt-1">
+        <button onclick="switchTab('home')" id="nav-btn-home" class="w-full flex items-center gap-4 px-3 py-2 rounded-lg text-white font-medium hover:text-white transition bg-zinc-900">
           <i data-lucide="home" class="w-5 h-5"></i>
           <span>Accueil</span>
         </button>
-        <button onclick="switchTab('search')" id="nav-btn-search" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
+        <button onclick="switchTab('search')" id="nav-btn-search" class="w-full flex items-center gap-4 px-3 py-2 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
           <i data-lucide="search" class="w-5 h-5"></i>
           <span>Recherche</span>
         </button>
-        <button onclick="switchTab('library')" id="nav-btn-library" class="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
-          <i data-lucide="library" class="w-5 h-5"></i>
-          <span>Favoris</span>
-        </button>
       </nav>
 
-      <!-- SPOTIFY CONNECT / SYNC STATUS -->
-      <div class="bg-zinc-900/90 rounded-xl p-3 border border-zinc-800 text-xs space-y-2">
-        <div class="flex items-center justify-between text-spotify-subtext font-bold uppercase tracking-wider text-[10px]">
-          <span>Synchronisation Directe</span>
-          <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-zinc-500 animate-pulse"></span>
+      <!-- PLAYLISTS / BIBLIOTHÈQUE SECTION -->
+      <div class="flex-1 bg-spotify-dark rounded-xl p-3 flex flex-col overflow-hidden border border-zinc-900">
+        <div class="flex items-center justify-between pb-2.5 border-b border-white/5">
+          <div class="flex items-center gap-2 text-spotify-subtext font-bold text-xs uppercase tracking-wider">
+            <i data-lucide="library" class="w-4 h-4"></i>
+            <span>Bibliothèque</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="openCreatePlaylistModal()" title="Créer une playlist" class="p-1 rounded-md hover:bg-white/10 text-zinc-300 hover:text-white transition cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+            <button onclick="openSpotifyImportModal()" title="Importer une playlist Spotify" class="p-1 rounded-md hover:bg-spotify-green/20 text-spotify-green hover:text-spotify-hover transition cursor-pointer flex items-center gap-1 text-[11px] font-bold">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Spotify</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-2 text-white font-medium">
-          <i data-lucide="cast" class="w-4 h-4 text-spotify-green"></i>
-          <span id="device-role-label">PC Principal</span>
-        </div>
-        <p class="text-[11px] text-zinc-400">Relié en temps réel avec ton iPhone.</p>
+
+        <!-- LIST OF PLAYLISTS -->
+        <div id="playlists-sidebar-list" class="flex-1 overflow-y-auto space-y-1 custom-scroll text-sm pt-2"></div>
       </div>
 
-      <div class="flex-1 bg-spotify-dark rounded-xl p-3 flex flex-col overflow-hidden border border-zinc-900">
-        <div class="flex items-center justify-between pb-3 text-spotify-subtext text-xs uppercase font-bold tracking-wider px-1">
-          <span>Mes favoris</span>
-          <i data-lucide="heart" class="w-4 h-4 text-spotify-green fill-spotify-green"></i>
+      <!-- SPOTIFY CONNECT STATUS -->
+      <div class="bg-zinc-900/70 rounded-xl p-2.5 border border-zinc-800 text-xs space-y-1">
+        <div class="flex items-center justify-between text-spotify-subtext font-bold uppercase tracking-wider text-[10px]">
+          <span>Connect Direct</span>
+          <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-zinc-500 animate-pulse"></span>
         </div>
-        <div id="liked-sidebar-list" class="flex-1 overflow-y-auto space-y-2 custom-scroll text-sm"></div>
+        <p class="text-[11px] text-zinc-300 flex items-center gap-1.5">
+          <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
+          <span id="device-role-label">PC Principal</span>
+        </p>
       </div>
     </aside>
 
@@ -175,6 +184,12 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- Button Import Spotify in Header -->
+          <button onclick="openSpotifyImportModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-spotify-green/10 hover:bg-spotify-green/20 text-xs font-bold text-spotify-green border border-spotify-green/30 transition cursor-pointer">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Importer Spotify</span>
+          </button>
+
           <button onclick="toggleCompactMode()" title="Mode Allégé / Mini-Lecteur" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
             <i data-lucide="minimize-2" class="w-3.5 h-3.5 text-zinc-300"></i>
             <span>Mode Allégé</span>
@@ -188,7 +203,7 @@
       </header>
 
       <!-- CATEGORY PILLS BAR -->
-      <div class="px-4 md:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-zinc-950/20 backdrop-blur">
+      <div id="category-pills-bar" class="px-4 md:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-zinc-950/20 backdrop-blur">
         <button onclick="filterCategory('all')" id="cat-btn-all" class="px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition">Tout</button>
         <button onclick="filterCategory('trending')" id="cat-btn-trending" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🔥 Tendances France</button>
         <button onclick="filterCategory('top50')" id="cat-btn-top50" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🏆 Top 50 Hits</button>
@@ -199,6 +214,39 @@
       <!-- SCROLLABLE PAGE BODY -->
       <div id="page-content" class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll space-y-8 pb-32">
         
+        <!-- PLAYLIST DETAIL VIEW (Hidden by default, shown when viewing a playlist) -->
+        <section id="playlist-detail-section" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row items-center sm:items-end gap-6 bg-gradient-to-t from-zinc-900 to-zinc-800/60 p-6 rounded-2xl border border-white/5 shadow-2xl">
+            <img id="detail-playlist-cover" src="" class="w-44 h-44 rounded-xl object-cover shadow-2xl border border-white/10 flex-shrink-0" alt="Cover">
+            <div class="flex-1 text-center sm:text-left space-y-2">
+              <span id="detail-playlist-badge" class="text-xs uppercase font-extrabold tracking-widest text-spotify-green">Playlist</span>
+              <h1 id="detail-playlist-title" class="text-2xl sm:text-4xl font-black text-white tracking-tight">Titre</h1>
+              <p id="detail-playlist-meta" class="text-xs sm:text-sm text-spotify-subtext">0 titre</p>
+              
+              <div class="flex items-center justify-center sm:justify-start gap-3 pt-2">
+                <button onclick="playCurrentPlaylistView(false)" class="px-6 py-2.5 rounded-full bg-spotify-green hover:bg-spotify-hover text-black font-extrabold flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer">
+                  <svg class="w-5 h-5 fill-black" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                  <span>Écouter</span>
+                </button>
+                <button onclick="playCurrentPlaylistView(true)" class="p-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition hover:scale-105 active:scale-95 cursor-pointer" title="Lecture aléatoire">
+                  <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
+                  </svg>
+                </button>
+                <button onclick="deleteCurrentPlaylistView()" id="delete-playlist-btn" class="p-2.5 rounded-full bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition cursor-pointer" title="Supprimer la playlist">
+                  <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TRACKS TABLE -->
+          <div class="bg-zinc-900/50 rounded-xl border border-white/5 overflow-hidden">
+            <div id="playlist-tracks-container" class="divide-y divide-white/5"></div>
+          </div>
+        </section>
+
         <!-- SEARCH RESULTS SECTION -->
         <section id="search-results-section" class="hidden">
           <div class="flex items-center justify-between mb-4">
@@ -270,8 +318,11 @@
         <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Sélectionnez un titre</p>
         <p id="player-artist" class="text-xs text-spotify-subtext line-clamp-1">SpotiWave HD</p>
       </div>
-      <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2">
+      <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2 cursor-pointer">
         <i data-lucide="heart" class="w-5 h-5"></i>
+      </button>
+      <button onclick="event.stopPropagation(); openAddToPlaylistModal(currentPlaylist[currentTrackIndex])" title="Ajouter à une playlist" class="text-spotify-subtext hover:text-white transition ml-1 cursor-pointer">
+        <i data-lucide="plus-circle" class="w-5 h-5"></i>
       </button>
     </div>
 
@@ -296,11 +347,8 @@
         
         <!-- PLAY / PAUSE BUTTON WITH DIRECT SVGS -->
         <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative cursor-pointer z-40" title="Lecture / Pause">
-          <!-- Play Icon -->
           <svg id="svg-play" class="w-5 h-5 fill-black ml-0.5 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-          <!-- Pause Icon -->
           <svg id="svg-pause" class="w-5 h-5 fill-black hidden pointer-events-none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-          <!-- Spinner -->
           <svg id="svg-spinner" class="w-5 h-5 animate-spin hidden text-black pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
         </button>
 
@@ -355,7 +403,7 @@
     </button>
     <button onclick="switchTab('library')" class="flex flex-col items-center text-xs text-spotify-subtext hover:text-white gap-1">
       <i data-lucide="library" class="w-5 h-5"></i>
-      <span>Favoris</span>
+      <span>Bibliothèque</span>
     </button>
   </nav>
 
@@ -401,7 +449,6 @@
     </div>
 
     <div class="flex items-center justify-between px-4 pb-8">
-      <!-- Full Modal Shuffle -->
       <button onclick="toggleShuffle()" id="full-shuffle-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-2" title="Lecture aléatoire">
         <svg class="w-6 h-6 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
           <polyline points="16 3 21 3 21 8"></polyline>
@@ -417,7 +464,6 @@
         <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       
-      <!-- Full Player Play/Pause button with SVGs -->
       <button onclick="togglePlay()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl cursor-pointer">
         <svg id="full-svg-play" class="w-8 h-8 fill-black ml-1 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
         <svg id="full-svg-pause" class="w-8 h-8 fill-black hidden pointer-events-none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
@@ -427,7 +473,6 @@
         <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
       </button>
 
-      <!-- Full Modal Repeat -->
       <button onclick="toggleRepeat()" id="full-repeat-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-2" title="Répéter">
         <svg class="w-6 h-6 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
           <polyline points="17 1 21 5 17 9"></polyline>
@@ -436,6 +481,86 @@
           <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
         </svg>
         <span id="full-repeat-dot" class="w-1.5 h-1.5 rounded-full bg-spotify-green mt-1 hidden"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: CREER UNE PLAYLIST -->
+  <div id="create-playlist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeCreatePlaylistModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Créer une playlist</h3>
+        <button onclick="closeCreatePlaylistModal()" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <input 
+        type="text" 
+        id="new-playlist-input" 
+        placeholder="Nom de ma playlist (ex: Workout, Rap 2026...)" 
+        class="w-full bg-zinc-800 text-sm text-white px-4 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-spotify-green"
+      >
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeCreatePlaylistModal()" class="px-4 py-2 rounded-full text-xs font-semibold text-zinc-300 hover:text-white">Annuler</button>
+        <button onclick="confirmCreatePlaylist()" class="px-5 py-2 rounded-full bg-spotify-green text-black text-xs font-bold hover:bg-spotify-hover transition">Créer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTER DEPUIS SPOTIFY -->
+  <div id="spotify-import-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeSpotifyImportModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-spotify-green flex items-center justify-center text-black">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white">Importer depuis Spotify</h3>
+        </div>
+        <button onclick="closeSpotifyImportModal()" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+
+      <p class="text-xs text-zinc-400">Colle n'importe quel lien de playlist ou d'album Spotify pour importer tous les morceaux en 1 clic :</p>
+      
+      <div class="space-y-1">
+        <input 
+          type="text" 
+          id="spotify-import-url" 
+          placeholder="https://open.spotify.com/playlist/..." 
+          class="w-full bg-zinc-800 text-sm text-white px-4 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-spotify-green"
+        >
+      </div>
+
+      <!-- TIP POUR LES LIKES SPOTIFY -->
+      <div class="bg-zinc-800/80 p-3 rounded-xl border border-white/5 text-xs text-zinc-300 space-y-1.5">
+        <p class="font-bold text-spotify-green flex items-center gap-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i>
+          Comment importer tes Titres Likés Spotify ?
+        </p>
+        <p class="text-[11px] text-zinc-400 leading-relaxed">
+          Dans Spotify sur PC, va dans <strong>« Titres likés »</strong>, fais <strong>Ctrl + A</strong>, puis clic droit ➔ <strong>Ajouter à une playlist</strong> ➔ crée une playlist (ex: <em>Mes Likes</em>). Copie ensuite son lien et colle-le ci-dessus !
+        </p>
+      </div>
+
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeSpotifyImportModal()" class="px-4 py-2 rounded-full text-xs font-semibold text-zinc-300 hover:text-white">Annuler</button>
+        <button onclick="confirmSpotifyImport()" id="spotify-import-btn" class="px-5 py-2 rounded-full bg-spotify-green text-black text-xs font-bold hover:bg-spotify-hover transition flex items-center gap-2">
+          <span>Importer</span>
+          <i data-lucide="loader" id="spotify-import-spinner" class="w-3.5 h-3.5 animate-spin hidden"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AJOUTER A UNE PLAYLIST -->
+  <div id="add-to-playlist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeAddToPlaylistModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">Ajouter à une playlist</h3>
+        <button onclick="closeAddToPlaylistModal()" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <div id="add-to-playlist-options" class="space-y-1 max-h-60 overflow-y-auto custom-scroll"></div>
+      <button onclick="closeAddToPlaylistModal(); openCreatePlaylistModal();" class="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-spotify-green font-bold transition flex items-center justify-center gap-1.5">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span>Nouvelle playlist</span>
       </button>
     </div>
   </div>
@@ -458,7 +583,7 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC & YOUTUBE AUDIO ENGINE -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
     let ytPlayer = null;
     let isYtReady = false;
@@ -474,7 +599,12 @@
     let isRemoteOnly = false;
     let searchTimeout = null;
     let progressTimer = null;
+
+    // LOCAL STORAGE PERSISTENCE
     let likedTracks = JSON.parse(localStorage.getItem('spotiwave_likes') || '[]');
+    let userPlaylists = JSON.parse(localStorage.getItem('spotiwave_playlists') || '[]');
+    let activeViewingPlaylistId = null;
+    let trackToAddToPlaylist = null;
 
     let ws = null;
 
@@ -530,7 +660,6 @@
     }
 
     function onPlayerError(e) {
-      console.warn("Player Error code:", e.data);
       setBuffering(false);
       setTimeout(playNext, 1200);
     }
@@ -538,7 +667,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       updateGreeting();
-      renderLikedSidebar();
+      renderPlaylistsSidebar();
       loadLiveFeed();
       initWebSocket();
 
@@ -562,7 +691,7 @@
           }
         }
       } catch (e) {
-        console.log("Feed fetch error:", e);
+        console.log("Feed error:", e);
       }
     }
 
@@ -590,7 +719,7 @@
           <img src="${t.cover}" class="w-14 h-14 object-cover flex-shrink-0" alt="${t.title}" loading="lazy">
           <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-1">${t.title}</span>
           <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition shadow-lg flex-shrink-0">
-            <i data-lucide="play" class="w-4 h-4 fill-black ml-0.5"></i>
+            <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           </div>
         </div>
       `).join('');
@@ -607,17 +736,389 @@
       const container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = tracks.map((t) => `
-        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
+        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5 relative">
           <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
             <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}" loading="lazy">
             <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
-              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
+              <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
             </div>
+            <!-- Plus button to add to playlist -->
+            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" title="Ajouter à une playlist" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-spotify-green hover:text-black text-white flex items-center justify-center backdrop-blur transition opacity-0 group-hover:opacity-100">
+              <svg class="w-4 h-4 fill-none stroke-current" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
           </div>
           <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
           <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
         </div>
       `).join('');
+    }
+
+    // PLAYLIST MANAGEMENT
+    function renderPlaylistsSidebar() {
+      const container = document.getElementById('playlists-sidebar-list');
+      if (!container) return;
+
+      let html = `
+        <!-- LIKED SONGS ITEM -->
+        <div onclick="viewLikedSongsPlaylist()" class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition ${activeViewingPlaylistId === 'liked' ? 'bg-white/15' : ''}">
+          <div class="w-10 h-10 rounded-md bg-gradient-to-br from-indigo-600 to-purple-800 flex items-center justify-center flex-shrink-0 text-white shadow">
+            <i data-lucide="heart" class="w-5 h-5 fill-white"></i>
+          </div>
+          <div class="overflow-hidden flex-1">
+            <p class="text-xs font-bold text-white line-clamp-1">Titres Likés</p>
+            <p class="text-[10px] text-zinc-400">${likedTracks.length} titre${likedTracks.length > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+      `;
+
+      userPlaylists.forEach(pl => {
+        const isSpotify = pl.type === 'spotify';
+        html += `
+          <div onclick="viewPlaylist('${pl.id}')" class="group flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition ${activeViewingPlaylistId === pl.id ? 'bg-white/15' : ''}">
+            <img src="${pl.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded-md object-cover flex-shrink-0 border border-white/5 shadow" alt="Cover">
+            <div class="overflow-hidden flex-1">
+              <p class="text-xs font-bold text-white line-clamp-1 flex items-center gap-1.5">
+                <span>${pl.title}</span>
+                ${isSpotify ? '<span class="text-[9px] px-1 py-0.2 rounded bg-spotify-green text-black font-black uppercase">Spotify</span>' : ''}
+              </p>
+              <p class="text-[10px] text-zinc-400">${pl.tracks ? pl.tracks.length : 0} titres</p>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function viewLikedSongsPlaylist() {
+      activeViewingPlaylistId = 'liked';
+      renderPlaylistsSidebar();
+
+      document.getElementById('playlist-detail-section').classList.remove('hidden');
+      document.getElementById('home-default-section').classList.add('hidden');
+      document.getElementById('category-pills-bar').classList.add('hidden');
+      document.getElementById('section-trending').classList.add('hidden');
+      document.getElementById('section-top50').classList.add('hidden');
+      document.getElementById('section-rap').classList.add('hidden');
+      document.getElementById('section-electro').classList.add('hidden');
+      document.getElementById('search-results-section').classList.add('hidden');
+
+      document.getElementById('detail-playlist-title').innerText = "Titres Likés";
+      document.getElementById('detail-playlist-badge').innerText = "Ma Collection";
+      document.getElementById('detail-playlist-cover').src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop";
+      document.getElementById('detail-playlist-meta').innerText = `${likedTracks.length} titres sauvegardés`;
+      document.getElementById('delete-playlist-btn').classList.add('hidden');
+
+      renderPlaylistTracksTable(likedTracks, true);
+    }
+
+    function viewPlaylist(playlistId) {
+      activeViewingPlaylistId = playlistId;
+      renderPlaylistsSidebar();
+
+      const pl = userPlaylists.find(p => p.id === playlistId);
+      if (!pl) return;
+
+      document.getElementById('playlist-detail-section').classList.remove('hidden');
+      document.getElementById('home-default-section').classList.add('hidden');
+      document.getElementById('category-pills-bar').classList.add('hidden');
+      document.getElementById('section-trending').classList.add('hidden');
+      document.getElementById('section-top50').classList.add('hidden');
+      document.getElementById('section-rap').classList.add('hidden');
+      document.getElementById('section-electro').classList.add('hidden');
+      document.getElementById('search-results-section').classList.add('hidden');
+
+      document.getElementById('detail-playlist-title').innerText = pl.title;
+      document.getElementById('detail-playlist-badge').innerText = pl.type === 'spotify' ? "Importé de Spotify" : "Playlist Personnelle";
+      document.getElementById('detail-playlist-cover').src = pl.cover || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop";
+      document.getElementById('detail-playlist-meta').innerText = `${pl.tracks ? pl.tracks.length : 0} morceaux`;
+      document.getElementById('delete-playlist-btn').classList.remove('hidden');
+
+      renderPlaylistTracksTable(pl.tracks || [], false);
+    }
+
+    function renderPlaylistTracksTable(tracks, isLikedView) {
+      const container = document.getElementById('playlist-tracks-container');
+      if (!tracks || tracks.length === 0) {
+        container.innerHTML = `<p class="p-8 text-center text-zinc-500 text-sm">Aucun morceau dans cette playlist pour le moment.</p>`;
+        return;
+      }
+
+      container.innerHTML = tracks.map((t, idx) => `
+        <div onclick="playTrackFromPlaylist(${idx})" class="group flex items-center justify-between p-3 hover:bg-white/10 transition cursor-pointer">
+          <div class="flex items-center gap-3 flex-1 overflow-hidden">
+            <span class="w-6 text-center text-xs font-mono text-zinc-500 group-hover:text-spotify-green">${idx + 1}</span>
+            <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded object-cover flex-shrink-0" alt="Cover">
+            <div class="overflow-hidden">
+              <p class="text-sm font-semibold text-white line-clamp-1">${t.title}</p>
+              <p class="text-xs text-zinc-400 line-clamp-1">${t.artist}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono text-zinc-400">
+            <span>${t.duration || '3:30'}</span>
+            <button onclick="event.stopPropagation(); removeTrackFromCurrentPlaylist(${idx}, ${isLikedView})" class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1" title="Retirer">
+              ✕
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function playTrackFromPlaylist(idx) {
+      let tracks = [];
+      if (activeViewingPlaylistId === 'liked') {
+        tracks = likedTracks;
+      } else {
+        const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+        if (pl) tracks = pl.tracks;
+      }
+      if (!tracks || tracks.length === 0) return;
+
+      const track = tracks[idx];
+      // If track has no YouTube video ID (e.g. from Spotify import), resolve it on the fly!
+      if (!track.id || track.id.length > 15) {
+        showToast("Résolution audio...");
+        try {
+          const res = await fetch(`/api/resolve?q=${encodeURIComponent(track.title + ' ' + track.artist)}`);
+          const data = await res.json();
+          if (data.success && data.track) {
+            track.id = data.track.id;
+            track.cover = data.track.cover;
+          }
+        } catch (e) {}
+      }
+
+      currentPlaylist = tracks;
+      loadTrack(idx, true);
+    }
+
+    function playCurrentPlaylistView(shuffle = false) {
+      let tracks = [];
+      if (activeViewingPlaylistId === 'liked') {
+        tracks = likedTracks;
+      } else {
+        const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+        if (pl) tracks = pl.tracks;
+      }
+      if (!tracks || tracks.length === 0) {
+        showToast("Playlist vide !");
+        return;
+      }
+      currentPlaylist = [...tracks];
+      if (shuffle) {
+        isShuffle = true;
+        updateShuffleUI();
+        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+      } else {
+        currentTrackIndex = 0;
+      }
+      playTrackFromPlaylist(currentTrackIndex);
+    }
+
+    function deleteCurrentPlaylistView() {
+      if (!confirm("Voulez-vous vraiment supprimer cette playlist ?")) return;
+      userPlaylists = userPlaylists.filter(p => p.id !== activeViewingPlaylistId);
+      localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      renderPlaylistsSidebar();
+      switchTab('home');
+      showToast("Playlist supprimée");
+    }
+
+    function removeTrackFromCurrentPlaylist(idx, isLikedView) {
+      if (isLikedView) {
+        likedTracks.splice(idx, 1);
+        localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
+        viewLikedSongsPlaylist();
+      } else {
+        const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+        if (pl && pl.tracks) {
+          pl.tracks.splice(idx, 1);
+          localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+          viewPlaylist(activeViewingPlaylistId);
+        }
+      }
+      showToast("Titre retiré");
+    }
+
+    // CREATE PLAYLIST MODAL
+    function openCreatePlaylistModal() {
+      document.getElementById('new-playlist-input').value = '';
+      document.getElementById('create-playlist-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('new-playlist-input').focus(), 100);
+    }
+
+    function closeCreatePlaylistModal() {
+      document.getElementById('create-playlist-modal').classList.add('hidden');
+    }
+
+    function confirmCreatePlaylist() {
+      const name = document.getElementById('new-playlist-input').value.trim();
+      if (!name) return;
+
+      const newPl = {
+        id: 'pl_' + Date.now(),
+        title: name,
+        type: 'custom',
+        cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop',
+        tracks: []
+      };
+
+      userPlaylists.unshift(newPl);
+      localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      renderPlaylistsSidebar();
+      closeCreatePlaylistModal();
+      viewPlaylist(newPl.id);
+      showToast("Playlist créée !");
+    }
+
+    // IMPORT SPOTIFY MODAL
+    function openSpotifyImportModal() {
+      document.getElementById('spotify-import-url').value = '';
+      document.getElementById('spotify-import-modal').classList.remove('hidden');
+    }
+
+    function closeSpotifyImportModal() {
+      document.getElementById('spotify-import-modal').classList.add('hidden');
+    }
+
+    async function confirmSpotifyImport() {
+      const url = document.getElementById('spotify-import-url').value.trim();
+      if (!url) {
+        alert("Veuillez coller un lien Spotify valide !");
+        return;
+      }
+
+      const spinner = document.getElementById('spotify-import-spinner');
+      const btn = document.getElementById('spotify-import-btn');
+      spinner.classList.remove('hidden');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/spotify/import?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+        spinner.classList.add('hidden');
+        btn.disabled = false;
+
+        if (data.success && data.tracks) {
+          const newPl = {
+            id: 'spotify_' + Date.now(),
+            title: data.title || "Playlist Spotify",
+            type: 'spotify',
+            cover: data.cover || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop",
+            tracks: data.tracks
+          };
+
+          userPlaylists.unshift(newPl);
+          localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+          renderPlaylistsSidebar();
+          closeSpotifyImportModal();
+          viewPlaylist(newPl.id);
+          showToast(`Importé : ${data.tracks.length} morceaux !`);
+        } else {
+          alert(data.error || "Impossible d'importer cette playlist Spotify.");
+        }
+      } catch (err) {
+        spinner.classList.add('hidden');
+        btn.disabled = false;
+        alert("Erreur lors de l'import Spotify : " + err.message);
+      }
+    }
+
+    // ADD TO PLAYLIST MODAL
+    function openAddToPlaylistModal(track) {
+      if (!track) return;
+      trackToAddToPlaylist = track;
+      const modal = document.getElementById('add-to-playlist-modal');
+      const container = document.getElementById('add-to-playlist-options');
+
+      if (userPlaylists.length === 0) {
+        container.innerHTML = `<p class="text-xs text-zinc-400 py-3 text-center">Aucune playlist existante. Créez-en une ci-dessous !</p>`;
+      } else {
+        container.innerHTML = userPlaylists.map(pl => `
+          <button onclick="addTrackToSpecificPlaylist('${pl.id}')" class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/10 transition text-left cursor-pointer">
+            <img src="${pl.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80&h=80&fit=crop'}" class="w-8 h-8 rounded object-cover flex-shrink-0" alt="Cover">
+            <div class="overflow-hidden flex-1">
+              <p class="text-xs font-bold text-white line-clamp-1">${pl.title}</p>
+              <p class="text-[10px] text-zinc-400">${pl.tracks ? pl.tracks.length : 0} titres</p>
+            </div>
+          </button>
+        `).join('');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeAddToPlaylistModal() {
+      document.getElementById('add-to-playlist-modal').classList.add('hidden');
+      trackToAddToPlaylist = null;
+    }
+
+    function addTrackToSpecificPlaylist(playlistId) {
+      if (!trackToAddToPlaylist) return;
+      const pl = userPlaylists.find(p => p.id === playlistId);
+      if (pl) {
+        if (!pl.tracks) pl.tracks = [];
+        // Avoid duplicates
+        if (!pl.tracks.some(t => t.title === trackToAddToPlaylist.title && t.artist === trackToAddToPlaylist.artist)) {
+          pl.tracks.push(trackToAddToPlaylist);
+          localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+          renderPlaylistsSidebar();
+          showToast(`Ajouté à "${pl.title}" !`);
+        } else {
+          showToast("Déjà dans la playlist !");
+        }
+      }
+      closeAddToPlaylistModal();
+    }
+
+    // SEARCH
+    function onSearchInput(query) {
+      clearTimeout(searchTimeout);
+      const spinner = document.getElementById('search-spinner');
+      if (!query.trim()) {
+        clearSearch();
+        return;
+      }
+
+      spinner.classList.remove('hidden');
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          spinner.classList.add('hidden');
+          if (data.success && data.tracks.length > 0) {
+            renderSearchResults(data.tracks);
+          }
+        } catch (e) {
+          spinner.classList.add('hidden');
+        }
+      }, 350);
+    }
+
+    function renderSearchResults(tracks) {
+      document.getElementById('playlist-detail-section').classList.add('hidden');
+      document.getElementById('search-results-section').classList.remove('hidden');
+      document.getElementById('home-default-section').classList.add('hidden');
+      document.getElementById('category-pills-bar').classList.add('hidden');
+      document.getElementById('section-trending').classList.add('hidden');
+      document.getElementById('section-top50').classList.add('hidden');
+      document.getElementById('section-rap').classList.add('hidden');
+      document.getElementById('section-electro').classList.add('hidden');
+
+      renderTrackGrid('search-results-grid', tracks);
+      lucide.createIcons();
+    }
+
+    function clearSearch() {
+      document.getElementById('global-search-input').value = '';
+      document.getElementById('search-results-section').classList.add('hidden');
+      document.getElementById('category-pills-bar').classList.remove('hidden');
+      document.getElementById('home-default-section').classList.remove('hidden');
+      document.getElementById('section-trending').classList.remove('hidden');
+      document.getElementById('section-top50').classList.remove('hidden');
+      document.getElementById('section-rap').classList.remove('hidden');
+      document.getElementById('section-electro').classList.remove('hidden');
     }
 
     // CATEGORY FILTER
@@ -649,53 +1150,7 @@
       }
     }
 
-    // SEARCH
-    function onSearchInput(query) {
-      clearTimeout(searchTimeout);
-      const spinner = document.getElementById('search-spinner');
-      if (!query.trim()) {
-        clearSearch();
-        return;
-      }
-
-      spinner.classList.remove('hidden');
-      searchTimeout = setTimeout(async () => {
-        try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-          const data = await res.json();
-          spinner.classList.add('hidden');
-          if (data.success && data.tracks.length > 0) {
-            renderSearchResults(data.tracks);
-          }
-        } catch (e) {
-          spinner.classList.add('hidden');
-        }
-      }, 350);
-    }
-
-    function renderSearchResults(tracks) {
-      document.getElementById('search-results-section').classList.remove('hidden');
-      document.getElementById('home-default-section').classList.add('hidden');
-      document.getElementById('section-trending').classList.add('hidden');
-      document.getElementById('section-top50').classList.add('hidden');
-      document.getElementById('section-rap').classList.add('hidden');
-      document.getElementById('section-electro').classList.add('hidden');
-
-      renderTrackGrid('search-results-grid', tracks);
-      lucide.createIcons();
-    }
-
-    function clearSearch() {
-      document.getElementById('global-search-input').value = '';
-      document.getElementById('search-results-section').classList.add('hidden');
-      document.getElementById('home-default-section').classList.remove('hidden');
-      document.getElementById('section-trending').classList.remove('hidden');
-      document.getElementById('section-top50').classList.remove('hidden');
-      document.getElementById('section-rap').classList.remove('hidden');
-      document.getElementById('section-electro').classList.remove('hidden');
-    }
-
-    // BULLETPROOF PLAYBACK
+    // PLAYBACK
     function playRealTrack(track) {
       currentPlaylist = [track, ...currentPlaylist.filter(t => t.id !== track.id)];
       loadTrack(0, true);
@@ -847,7 +1302,11 @@
         return;
       }
       if (isShuffle) {
-        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+        let nextIdx = Math.floor(Math.random() * currentPlaylist.length);
+        if (currentPlaylist.length > 1 && nextIdx === currentTrackIndex) {
+          nextIdx = (nextIdx + 1) % currentPlaylist.length;
+        }
+        currentTrackIndex = nextIdx;
       } else {
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
       }
@@ -944,25 +1403,6 @@
       });
     }
 
-    let toastTimer = null;
-    function showToast(text) {
-      let toast = document.getElementById('spotiwave-toast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'spotiwave-toast';
-        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl border border-white/10 z-50 transition-all duration-300 opacity-0 pointer-events-none';
-        document.body.appendChild(toast);
-      }
-      toast.innerText = text;
-      toast.classList.remove('opacity-0');
-      toast.classList.add('opacity-100');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0');
-      }, 1600);
-    }
-
     let currentVolume = 80;
     function setVolume(val) {
       currentVolume = Math.round(val * 100);
@@ -1019,6 +1459,25 @@
         clearInterval(progressTimer);
         progressTimer = null;
       }
+    }
+
+    let toastTimer = null;
+    function showToast(text) {
+      let toast = document.getElementById('spotiwave-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'spotiwave-toast';
+        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl border border-white/10 z-50 transition-all duration-300 opacity-0 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = text;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 1600);
     }
 
     function toggleCompactMode() {
@@ -1082,21 +1541,23 @@
     function toggleLikeCurrent() {
       const track = currentPlaylist[currentTrackIndex];
       if (!track) return;
-      const idx = likedTracks.findIndex(item => item.id === track.id);
+      const idx = likedTracks.findIndex(item => item.title === track.title && item.artist === track.artist);
       if (idx > -1) {
         likedTracks.splice(idx, 1);
+        showToast("Retiré des Titres Likés");
       } else {
         likedTracks.push(track);
+        showToast("Ajouté aux Titres Likés ! ❤️");
       }
       localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
       updateLikeIcon();
-      renderLikedSidebar();
+      renderPlaylistsSidebar();
     }
 
     function updateLikeIcon() {
       const track = currentPlaylist[currentTrackIndex];
       if (!track) return;
-      const isLiked = likedTracks.some(item => item.id === track.id);
+      const isLiked = likedTracks.some(item => item.title === track.title && item.artist === track.artist);
       const btn = document.getElementById('like-btn');
       const fullIcon = document.getElementById('full-like-icon');
 
@@ -1110,23 +1571,6 @@
         fullIcon.classList.remove('text-spotify-green', 'fill-spotify-green');
       }
       lucide.createIcons();
-    }
-
-    function renderLikedSidebar() {
-      const container = document.getElementById('liked-sidebar-list');
-      if (likedTracks.length === 0) {
-        container.innerHTML = `<p class="text-xs text-zinc-500 italic p-2">Aucun favori pour l'instant</p>`;
-        return;
-      }
-      container.innerHTML = likedTracks.map((t) => `
-        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="flex items-center gap-2 p-1.5 rounded-md hover:bg-white/5 cursor-pointer">
-          <img src="${t.cover}" class="w-9 h-9 rounded object-cover flex-shrink-0">
-          <div class="overflow-hidden">
-            <p class="text-xs font-semibold text-white line-clamp-1">${t.title}</p>
-            <p class="text-[10px] text-zinc-400 line-clamp-1">${t.artist}</p>
-          </div>
-        </div>
-      `).join('');
     }
 
     function updateGreeting() {
@@ -1159,9 +1603,16 @@
       if (tab === 'search') {
         document.getElementById('global-search-input').focus();
       } else if (tab === 'library') {
-        document.getElementById('sidebar').classList.toggle('hidden');
+        viewLikedSongsPlaylist();
       } else {
         clearSearch();
+        document.getElementById('playlist-detail-section').classList.add('hidden');
+        document.getElementById('home-default-section').classList.remove('hidden');
+        document.getElementById('category-pills-bar').classList.remove('hidden');
+        document.getElementById('section-trending').classList.remove('hidden');
+        document.getElementById('section-top50').classList.remove('hidden');
+        document.getElementById('section-rap').classList.remove('hidden');
+        document.getElementById('section-electro').classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }

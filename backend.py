@@ -126,8 +126,66 @@ async def get_live_feed():
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
-@app.get("/api/search")
-async def search_tracks(q: str = Query(..., min_length=1)):
+@app.get("/api/spotify/import")
+async def import_spotify(url: str = Query(..., min_length=1)):
+    m = re.search(r'(playlist|album|track)[/:]([a-zA-Z0-9]+)', url)
+    if not m:
+        return JSONResponse(status_code=400, content={'success': False, 'error': 'Lien Spotify invalide (ex: https://open.spotify.com/playlist/...)'})
+    
+    item_type = m.group(1)
+    item_id = m.group(2)
+    
+    embed_url = f'https://open.spotify.com/embed/{item_type}/{item_id}'
+    req = urllib.request.Request(embed_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+    try:
+        html = urllib.request.urlopen(req, timeout=10).read().decode('utf-8')
+        m_json = re.search(r'id="__NEXT_DATA__"[^>]*>(.*?)</script>', html)
+        if not m_json:
+            return JSONResponse(status_code=404, content={'success': False, 'error': 'Impossible de lire les données publiques de cette playlist Spotify.'})
+        
+        data = json.loads(m_json.group(1))
+        page_props = data.get('props', {}).get('pageProps', {})
+        entity = page_props.get('state', {}).get('data', {}).get('entity', {})
+        
+        name = entity.get('name') or page_props.get('title') or 'Playlist Spotify'
+        cover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
+        visual = entity.get('visualIdentity', {}) or {}
+        if visual.get('image') and len(visual['image']) > 0:
+            cover = visual['image'][-1].get('url', cover)
+
+        tracks = []
+        track_list = entity.get('trackList', [])
+        for t in track_list:
+            tracks.append({
+                'title': t.get('title', 'Titre'),
+                'artist': t.get('subtitle', 'Artiste'),
+                'duration': t.get('duration', '3:30'),
+                'cover': cover
+            })
+            
+        return JSONResponse(content={
+            'success': True,
+            'type': item_type,
+            'title': name,
+            'cover': cover,
+            'count': len(tracks),
+            'tracks': tracks
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
+
+@app.get("/api/resolve")
+async def resolve_track_query(q: str = Query(..., min_length=1)):
+    try:
+        results = ytm.search(q, filter="songs")
+        if results and len(results) > 0:
+            track = format_track(results[0])
+            if track:
+                return JSONResponse(content={"success": True, "track": track})
+        return JSONResponse(status_code=404, content={"success": False, "error": "Titre introuvable"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
     try:
         results = ytm.search(q, filter="songs")
         tracks = []
