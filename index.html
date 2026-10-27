@@ -150,15 +150,18 @@
       </div>
 
       <!-- SPOTIFY CONNECT STATUS -->
-      <div class="bg-zinc-900/70 rounded-xl p-2.5 border border-zinc-800 text-xs space-y-1">
+      <div class="bg-zinc-900/70 rounded-xl p-2.5 border border-zinc-800 text-xs space-y-1 cursor-pointer hover:bg-zinc-800/80 transition" onclick="openConnectModal()">
         <div class="flex items-center justify-between text-spotify-subtext font-bold uppercase tracking-wider text-[10px]">
-          <span>Connect Direct</span>
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
+            <span>Connect Direct</span>
+          </span>
           <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-zinc-500 animate-pulse"></span>
         </div>
-        <p class="text-[11px] text-zinc-300 flex items-center gap-1.5">
-          <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
-          <span id="device-role-label">PC Principal</span>
-        </p>
+        <div class="text-[11px] text-zinc-300 flex items-center justify-between pt-0.5">
+          <span id="device-role-label" class="font-medium text-white truncate max-w-[110px]">Détection...</span>
+          <span id="device-role-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-spotify-green/20 text-spotify-green font-bold">Haut-parleur</span>
+        </div>
       </div>
     </aside>
 
@@ -380,10 +383,10 @@
     </div>
 
     <!-- Volume & Controls -->
-    <div class="hidden md:flex items-center gap-3 w-48 justify-end z-30">
-      <button onclick="toggleDeviceRole()" id="device-role-btn" title="Basculer entre Télécommande iPhone et Lecteur Principal" class="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext flex items-center gap-1.5 border border-white/5 cursor-pointer">
-        <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
-        <span id="device-mode-text">Local</span>
+    <div class="hidden md:flex items-center gap-3 w-56 justify-end z-30">
+      <button onclick="openConnectModal()" id="connect-device-btn" title="Gérer les appareils Connect" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext hover:text-white flex items-center gap-1.5 border border-white/5 cursor-pointer transition">
+        <i data-lucide="cast" id="connect-cast-icon" class="w-3.5 h-3.5 text-spotify-green"></i>
+        <span id="device-mode-text" class="text-[11px] font-medium text-zinc-200 max-w-[90px] truncate">Appareils</span>
       </button>
 
       <i data-lucide="volume-2" class="w-4 h-4 text-spotify-subtext"></i>
@@ -415,11 +418,11 @@
       <button onclick="closeMobilePlayer()" class="p-2 -ml-2 text-white hover:text-spotify-subtext transition">
         <i data-lucide="chevron-down" class="w-7 h-7"></i>
       </button>
-      <div class="text-center">
+      <div class="text-center cursor-pointer" onclick="openConnectModal()">
         <p class="text-[10px] uppercase font-bold tracking-widest text-spotify-subtext">SpotiWave Connect</p>
-        <p class="text-xs font-semibold text-spotify-green flex items-center justify-center gap-1">
+        <p id="full-connect-status" class="text-xs font-semibold text-spotify-green flex items-center justify-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-spotify-green inline-block"></span>
-          Synchronisé
+          <span id="full-connect-label">Synchronisé</span>
         </p>
       </div>
       <button onclick="toggleLikeCurrent()" class="p-2 -mr-2">
@@ -565,6 +568,58 @@
     </div>
   </div>
 
+  <!-- SPOTIWAVE CONNECT MODAL -->
+  <div id="connect-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeConnectModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="cast" class="w-5 h-5 text-spotify-green"></i>
+          <h3 class="text-base font-bold text-white">SpotiWave Connect</h3>
+        </div>
+        <button onclick="closeConnectModal()" class="text-zinc-400 hover:text-white p-1">✕</button>
+      </div>
+
+      <!-- Active Speaker Info -->
+      <div class="p-3 rounded-xl bg-zinc-800/80 border border-spotify-green/30 flex items-center justify-between">
+        <div class="truncate mr-2">
+          <p class="text-[10px] text-spotify-green font-bold uppercase tracking-wider">Diffuseur Actif</p>
+          <p id="modal-active-speaker-name" class="text-xs font-bold text-white truncate">Chargement...</p>
+        </div>
+        <button onclick="transferToMe()" id="modal-transfer-btn" class="px-3 py-1 bg-spotify-green text-black text-xs font-bold rounded-full hover:scale-105 transition cursor-pointer shrink-0">
+          Écouter ici 🔊
+        </button>
+      </div>
+
+      <!-- Devices List -->
+      <div class="space-y-1.5">
+        <p class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Appareils Détectés (<span id="devices-count">1</span>)</p>
+        <div id="devices-list-container" class="space-y-1.5 max-h-40 overflow-y-auto custom-scroll"></div>
+      </div>
+
+      <!-- Jam Mode Switch -->
+      <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span>Mode Jam (Multi-Room)</span>
+            <span class="text-[9px] px-1 bg-amber-500/20 text-amber-400 font-bold rounded">BÊTA</span>
+          </p>
+          <p class="text-[10px] text-zinc-400">Jouer en simultané sur tous les appareils</p>
+        </div>
+        <button onclick="toggleJamMode()" id="jam-mode-toggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-zinc-700 transition cursor-pointer">
+          <span id="jam-toggle-knob" class="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1"></span>
+        </button>
+      </div>
+
+      <!-- Rename device -->
+      <div class="pt-2 border-t border-zinc-800 flex items-center gap-2">
+        <input type="text" id="device-rename-input" placeholder="Nom de cet appareil" class="flex-1 bg-zinc-800 text-xs px-3 py-2 rounded-lg border border-white/5 focus:outline-none focus:border-spotify-green text-white">
+        <button onclick="saveDeviceName()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-medium rounded-lg text-zinc-200 transition cursor-pointer shrink-0">
+          Renommer
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- PWA INSTALL GUIDE MODAL -->
   <div id="install-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeInstallGuide()">
     <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl" onclick="event.stopPropagation()">
@@ -588,6 +643,7 @@
     let ytPlayer = null;
     let isYtReady = false;
     let pendingTrack = null;
+    let currentPlayingVideoId = null;
 
     let liveFeedData = null;
     let currentPlaylist = [];
@@ -596,9 +652,31 @@
     let isShuffle = false;
     let isRepeat = false;
     let isBuffering = false;
-    let isRemoteOnly = false;
     let searchTimeout = null;
     let progressTimer = null;
+
+    // SPOTIWAVE CONNECT & MULTI-DEVICE STATE
+    let myDeviceId = localStorage.getItem('spotiwave_device_id');
+    if (!myDeviceId) {
+      myDeviceId = 'dev_' + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('spotiwave_device_id', myDeviceId);
+    }
+    let isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    let defaultDeviceName = isMobileDevice 
+      ? (/iPhone/i.test(navigator.userAgent) ? 'iPhone' : 'Mobile') 
+      : (navigator.userAgent.includes('Mac') ? 'Mac' : 'PC');
+    let myDeviceName = localStorage.getItem('spotiwave_device_name') || `${defaultDeviceName} (${myDeviceId.substring(4, 7)})`;
+    let activeSpeakerId = null;
+    let activeSpeakerName = "";
+    let syncMode = "connect"; // "connect" or "jam"
+    let availableDevices = [];
+    let lastSyncPosition = 0;
+    let lastSyncTimestamp = Date.now();
+
+    function amISpeaker() {
+      if (syncMode === 'jam') return true;
+      return !activeSpeakerId || activeSpeakerId === myDeviceId;
+    }
 
     // LOCAL STORAGE PERSISTENCE
     let likedTracks = JSON.parse(localStorage.getItem('spotiwave_likes') || '[]');
@@ -1162,23 +1240,38 @@
       if (!track) return;
 
       syncUIWithTrack(track);
-      setBuffering(true);
 
-      if (isYtReady && ytPlayer && ytPlayer.loadVideoById) {
-        loadTrackDirect(track, autoplay);
+      if (amISpeaker()) {
+        setBuffering(true);
+        currentPlayingVideoId = track.id;
+        if (isYtReady && ytPlayer && ytPlayer.loadVideoById) {
+          loadTrackDirect(track, autoplay);
+        } else {
+          pendingTrack = track;
+        }
+
+        sendWs('UPDATE_STATE', {
+          track: track,
+          isPlaying: autoplay,
+          position: 0
+        });
       } else {
-        pendingTrack = track;
+        // Remote device: don't play sound locally, send command to active speaker
+        setPlayState(autoplay);
+        lastSyncPosition = 0;
+        lastSyncTimestamp = Date.now();
+        showToast(`Lecture sur ${activeSpeakerName || "l'appareil actif"}`);
+        sendWs('CONTROL_COMMAND', {
+          action: 'LOAD_TRACK',
+          track: track,
+          autoplay: autoplay
+        });
       }
-
-      sendWs('UPDATE_STATE', {
-        track: track,
-        isPlaying: autoplay,
-        position: 0
-      });
     }
 
     function loadTrackDirect(track, autoplay) {
       try {
+        currentPlayingVideoId = track.id;
         if (autoplay) {
           ytPlayer.loadVideoById(track.id);
           setPlayState(true);
@@ -1246,8 +1339,10 @@
     }
 
     function togglePlay() {
-      if (isRemoteOnly) {
-        sendWs('CONTROL_COMMAND', { action: isPlaying ? 'PAUSE' : 'PLAY' });
+      if (!amISpeaker()) {
+        const nextState = !isPlaying;
+        setPlayState(nextState);
+        sendWs('CONTROL_COMMAND', { action: nextState ? 'PLAY' : 'PAUSE' });
         return;
       }
       if (!currentPlaylist || currentPlaylist.length === 0) return;
@@ -1293,11 +1388,13 @@
         }
       }
 
-      sendWs('UPDATE_STATE', { isPlaying: playing });
+      if (amISpeaker()) {
+        sendWs('UPDATE_STATE', { isPlaying: playing });
+      }
     }
 
     function playNext() {
-      if (isRemoteOnly) {
+      if (!amISpeaker()) {
         sendWs('CONTROL_COMMAND', { action: 'NEXT' });
         return;
       }
@@ -1314,7 +1411,7 @@
     }
 
     function playPrev() {
-      if (isRemoteOnly) {
+      if (!amISpeaker()) {
         sendWs('CONTROL_COMMAND', { action: 'PREV' });
         return;
       }
@@ -1411,20 +1508,42 @@
       }
     }
 
+    function parseDurationSeconds(str) {
+      if (!str) return 210;
+      if (typeof str === 'number') return str;
+      const parts = str.split(':').map(Number);
+      if (parts.length === 2) return (parts[0] * 60) + (parts[1] || 0);
+      if (parts.length === 3) return (parts[0] * 3600) + (parts[1] * 60) + (parts[2] || 0);
+      return 210;
+    }
+
     function handleSeekClick(e) {
-      if (!ytPlayer || !ytPlayer.getDuration) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const width = rect.width;
       const seekRatio = Math.max(0, Math.min(1, clickX / width));
-      try {
-        const duration = ytPlayer.getDuration();
-        if (duration) {
-          const target = seekRatio * duration;
-          ytPlayer.seekTo(target, true);
-          sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
-        }
-      } catch(e) {}
+
+      const track = currentPlaylist[currentTrackIndex];
+      const dur = (amISpeaker() && ytPlayer && ytPlayer.getDuration && ytPlayer.getDuration() > 0)
+        ? ytPlayer.getDuration()
+        : parseDurationSeconds(track?.duration || "3:30");
+      const target = seekRatio * dur;
+
+      lastSyncPosition = target;
+      lastSyncTimestamp = Date.now();
+
+      if (amISpeaker()) {
+        try {
+          if (ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(target, true);
+        } catch(e) {}
+      }
+      sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
+
+      const pct = dur > 0 ? (target / dur) * 100 : 0;
+      document.getElementById('progress-bar').style.width = `${pct}%`;
+      document.getElementById('full-progress-bar').style.width = `${pct}%`;
+      document.getElementById('current-time').innerText = formatTime(target);
+      document.getElementById('full-current-time').innerText = formatTime(target);
     }
 
     function formatTime(seconds) {
@@ -1437,20 +1556,38 @@
     function startProgressTracking() {
       stopProgressTracking();
       progressTimer = setInterval(() => {
-        if (!ytPlayer || !ytPlayer.getCurrentTime) return;
-        try {
-          const cur = ytPlayer.getCurrentTime() || 0;
-          const dur = ytPlayer.getDuration() || 0;
-          if (dur > 0) {
-            const pct = (cur / dur) * 100;
-            document.getElementById('progress-bar').style.width = `${pct}%`;
-            document.getElementById('full-progress-bar').style.width = `${pct}%`;
-            document.getElementById('current-time').innerText = formatTime(cur);
-            document.getElementById('full-current-time').innerText = formatTime(cur);
-            document.getElementById('duration-time').innerText = formatTime(dur);
-            document.getElementById('full-duration-time').innerText = formatTime(dur);
+        if (amISpeaker()) {
+          if (!ytPlayer || !ytPlayer.getCurrentTime) return;
+          try {
+            const cur = ytPlayer.getCurrentTime() || 0;
+            const dur = ytPlayer.getDuration() || 0;
+            if (dur > 0) {
+              const pct = (cur / dur) * 100;
+              document.getElementById('progress-bar').style.width = `${pct}%`;
+              document.getElementById('full-progress-bar').style.width = `${pct}%`;
+              document.getElementById('current-time').innerText = formatTime(cur);
+              document.getElementById('full-current-time').innerText = formatTime(cur);
+              document.getElementById('duration-time').innerText = formatTime(dur);
+              document.getElementById('full-duration-time').innerText = formatTime(dur);
+            }
+          } catch(e) {}
+        } else {
+          // REMOTE DEVICE: smoothly compute position from last sync timestamp
+          const track = currentPlaylist[currentTrackIndex];
+          const dur = parseDurationSeconds(track?.duration || "3:30");
+          let cur = lastSyncPosition;
+          if (isPlaying) {
+            cur += (Date.now() - lastSyncTimestamp) / 1000;
+            if (cur > dur) cur = dur;
           }
-        } catch(e) {}
+          const pct = dur > 0 ? (cur / dur) * 100 : 0;
+          document.getElementById('progress-bar').style.width = `${pct}%`;
+          document.getElementById('full-progress-bar').style.width = `${pct}%`;
+          document.getElementById('current-time').innerText = formatTime(cur);
+          document.getElementById('full-current-time').innerText = formatTime(cur);
+          document.getElementById('duration-time').innerText = formatTime(dur);
+          document.getElementById('full-duration-time').innerText = formatTime(dur);
+        }
       }, 250);
     }
 
@@ -1484,19 +1621,208 @@
       document.body.classList.toggle('compact-mode');
     }
 
-    function toggleDeviceRole() {
-      isRemoteOnly = !isRemoteOnly;
-      const btnText = document.getElementById('device-mode-text');
-      const label = document.getElementById('device-role-label');
-      if (isRemoteOnly) {
+    // SPOTIWAVE CONNECT MODAL & ACTIONS
+    function openConnectModal() {
+      renderDevicesModal();
+      document.getElementById('connect-modal').classList.remove('hidden');
+    }
+
+    function closeConnectModal() {
+      document.getElementById('connect-modal').classList.add('hidden');
+    }
+
+    function renderDevicesModal() {
+      const listEl = document.getElementById('devices-list-container');
+      const countEl = document.getElementById('devices-count');
+      const speakerNameEl = document.getElementById('modal-active-speaker-name');
+      const transferBtn = document.getElementById('modal-transfer-btn');
+      const renameInput = document.getElementById('device-rename-input');
+      const jamToggle = document.getElementById('jam-mode-toggle');
+      const jamKnob = document.getElementById('jam-toggle-knob');
+
+      if (renameInput) renameInput.value = myDeviceName;
+      if (countEl) countEl.innerText = availableDevices.length || 1;
+
+      const currentSpeaker = availableDevices.find(d => d.id === activeSpeakerId);
+      const speakerName = currentSpeaker ? currentSpeaker.name : (activeSpeakerName || (amISpeaker() ? myDeviceName : "Aucun"));
+      if (speakerNameEl) speakerNameEl.innerText = speakerName;
+
+      if (transferBtn) {
+        if (amISpeaker() && syncMode !== 'jam') {
+          transferBtn.innerText = "Actuel ✓";
+          transferBtn.className = "px-3 py-1 bg-zinc-800 text-zinc-400 text-xs font-bold rounded-full cursor-default shrink-0";
+          transferBtn.disabled = true;
+        } else {
+          transferBtn.innerText = "Écouter ici 🔊";
+          transferBtn.className = "px-3 py-1 bg-spotify-green text-black text-xs font-bold rounded-full hover:scale-105 transition cursor-pointer shrink-0";
+          transferBtn.disabled = false;
+        }
+      }
+
+      if (jamToggle && jamKnob) {
+        if (syncMode === 'jam') {
+          jamToggle.className = "relative inline-flex h-6 w-11 items-center rounded-full bg-spotify-green transition cursor-pointer";
+          jamKnob.className = "inline-block h-4 w-4 transform rounded-full bg-black transition translate-x-6";
+        } else {
+          jamToggle.className = "relative inline-flex h-6 w-11 items-center rounded-full bg-zinc-700 transition cursor-pointer";
+          jamKnob.className = "inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1";
+        }
+      }
+
+      if (listEl) {
+        if (availableDevices.length === 0) {
+          listEl.innerHTML = `
+            <div class="p-2.5 bg-zinc-800/60 rounded-xl flex items-center justify-between border border-white/5">
+              <div class="flex items-center gap-2 truncate">
+                <i data-lucide="${isMobileDevice ? 'smartphone' : 'laptop'}" class="w-4 h-4 text-spotify-green"></i>
+                <span class="text-xs font-bold text-white truncate">${escapeHtml(myDeviceName)} (Cet appareil)</span>
+              </div>
+              <span class="text-[10px] text-spotify-green font-bold bg-spotify-green/20 px-2 py-0.5 rounded-full shrink-0">Actif</span>
+            </div>
+          `;
+        } else {
+          listEl.innerHTML = availableDevices.map(d => {
+            const isMe = d.id === myDeviceId;
+            const isSpk = d.id === activeSpeakerId;
+            const icon = d.type === 'mobile' ? 'smartphone' : 'laptop';
+            return `
+              <div class="p-2.5 rounded-xl flex items-center justify-between border transition ${isSpk ? 'bg-zinc-800/90 border-spotify-green/40' : 'bg-zinc-900/80 border-white/5 hover:border-white/10'}">
+                <div class="flex items-center gap-2 truncate mr-2">
+                  <i data-lucide="${icon}" class="w-4 h-4 ${isSpk ? 'text-spotify-green' : 'text-zinc-400'} shrink-0"></i>
+                  <div class="truncate">
+                    <p class="text-xs font-bold ${isSpk ? 'text-spotify-green' : 'text-white'} truncate">
+                      ${escapeHtml(d.name)} ${isMe ? '<span class="text-[10px] text-zinc-400 font-normal">(Cet appareil)</span>' : ''}
+                    </p>
+                    <p class="text-[10px] text-zinc-400">${isSpk ? 'Diffuseur audio' : 'Télécommande'}</p>
+                  </div>
+                </div>
+                <div class="shrink-0">
+                  ${isSpk ? `
+                    <span class="flex items-center gap-1 text-[10px] text-spotify-green font-bold bg-spotify-green/10 border border-spotify-green/20 px-2 py-0.5 rounded-full">
+                      <span class="w-1.5 h-1.5 rounded-full bg-spotify-green animate-pulse"></span>
+                      Actif
+                    </span>
+                  ` : `
+                    <button onclick="selectSpeaker('${d.id}')" class="text-[10px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-white/5 transition cursor-pointer">
+                      Choisir
+                    </button>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+        lucide.createIcons();
+      }
+    }
+
+    function transferToMe() {
+      selectSpeaker(myDeviceId);
+    }
+
+    function selectSpeaker(deviceId) {
+      activeSpeakerId = deviceId;
+      sendWs('SET_ACTIVE_SPEAKER', { deviceId: deviceId });
+      showToast(deviceId === myDeviceId ? "Son transféré sur cet appareil 🔊" : "Son transféré");
+      updateConnectUI();
+      renderDevicesModal();
+
+      if (amISpeaker()) {
+        const track = currentPlaylist[currentTrackIndex];
+        if (track && ytPlayer && ytPlayer.loadVideoById) {
+          currentPlayingVideoId = track.id;
+          ytPlayer.loadVideoById(track.id);
+          if (lastSyncPosition > 0) {
+            setTimeout(() => ytPlayer.seekTo(lastSyncPosition, true), 300);
+          }
+          setPlayState(true);
+        }
+      } else {
         if (ytPlayer && ytPlayer.pauseVideo) {
           try { ytPlayer.pauseVideo(); } catch(e) {}
         }
-        btnText.innerText = "Télécommande";
-        label.innerText = "Mode : Télécommande";
-      } else {
-        btnText.innerText = "Local";
-        label.innerText = "Mode : PC Principal";
+      }
+    }
+
+    function toggleJamMode() {
+      const newMode = syncMode === 'jam' ? 'connect' : 'jam';
+      syncMode = newMode;
+      sendWs('SET_SYNC_MODE', { syncMode: newMode });
+      showToast(newMode === 'jam' ? "Mode Jam activé (tous les appareils)" : "Mode Connect (1 diffuseur)");
+      updateConnectUI();
+      renderDevicesModal();
+
+      if (newMode === 'jam') {
+        const track = currentPlaylist[currentTrackIndex];
+        if (track && ytPlayer && ytPlayer.loadVideoById) {
+          currentPlayingVideoId = track.id;
+          ytPlayer.loadVideoById(track.id);
+          if (lastSyncPosition > 0) {
+            setTimeout(() => ytPlayer.seekTo(lastSyncPosition, true), 300);
+          }
+          setPlayState(true);
+        }
+      }
+    }
+
+    function saveDeviceName() {
+      const input = document.getElementById('device-rename-input');
+      if (input && input.value.trim()) {
+        myDeviceName = input.value.trim();
+        localStorage.setItem('spotiwave_device_name', myDeviceName);
+        sendWs('REGISTER_DEVICE', {
+          id: myDeviceId,
+          name: myDeviceName,
+          type: isMobileDevice ? 'mobile' : 'pc'
+        });
+        showToast("Nom de l'appareil mis à jour !");
+        updateConnectUI();
+        renderDevicesModal();
+      }
+    }
+
+    function updateConnectUI() {
+      const speakerBadge = document.getElementById('device-role-badge');
+      const speakerLabel = document.getElementById('device-role-label');
+      const bottomText = document.getElementById('device-mode-text');
+      const fullLabel = document.getElementById('full-connect-label');
+      const castIcon = document.getElementById('connect-cast-icon');
+
+      const isSpk = amISpeaker();
+      const currentSpeaker = availableDevices.find(d => d.id === activeSpeakerId);
+      const dispName = currentSpeaker ? currentSpeaker.name : (activeSpeakerName || myDeviceName);
+
+      if (speakerLabel) {
+        speakerLabel.innerText = isSpk ? `${myDeviceName}` : `${dispName}`;
+      }
+
+      if (speakerBadge) {
+        if (syncMode === 'jam') {
+          speakerBadge.innerText = "Mode Jam";
+          speakerBadge.className = "text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold";
+        } else if (isSpk) {
+          speakerBadge.innerText = "Haut-parleur";
+          speakerBadge.className = "text-[9px] px-1.5 py-0.5 rounded bg-spotify-green/20 text-spotify-green font-bold";
+        } else {
+          speakerBadge.innerText = "Télécommande";
+          speakerBadge.className = "text-[9px] px-1.5 py-0.5 rounded bg-zinc-700 text-zinc-300 font-bold";
+        }
+      }
+
+      if (bottomText) {
+        if (syncMode === 'jam') bottomText.innerText = "Jam";
+        else if (isSpk) bottomText.innerText = "Cet appareil";
+        else bottomText.innerText = `${dispName}`;
+      }
+
+      if (fullLabel) {
+        if (syncMode === 'jam') fullLabel.innerText = "Mode Jam";
+        else if (isSpk) fullLabel.innerText = "Haut-parleur";
+        else fullLabel.innerText = `Écoute : ${dispName}`;
+      }
+
+      if (castIcon) {
+        castIcon.className = isSpk ? "w-3.5 h-3.5 text-spotify-green" : "w-3.5 h-3.5 text-spotify-subtext";
       }
     }
 
@@ -1508,22 +1834,104 @@
         ws = new WebSocket(wsUrl);
         ws.onopen = () => {
           document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-spotify-green";
+          sendWs('REGISTER_DEVICE', {
+            id: myDeviceId,
+            name: myDeviceName,
+            type: isMobileDevice ? 'mobile' : 'pc'
+          });
         };
+
         ws.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
-            if (msg.type === "REMOTE_COMMAND") {
+            if (msg.type === "INIT_STATE") {
+              if (msg.data.devices) availableDevices = msg.data.devices;
+              if (msg.data.activeSpeakerId) activeSpeakerId = msg.data.activeSpeakerId;
+              if (msg.data.activeSpeakerName) activeSpeakerName = msg.data.activeSpeakerName;
+              if (msg.data.syncMode) syncMode = msg.data.syncMode;
+              if (msg.data.track) {
+                syncUIWithTrack(msg.data.track);
+                lastSyncPosition = msg.data.position || 0;
+                lastSyncTimestamp = msg.data.timestamp || Date.now();
+              }
+              updateConnectUI();
+            } else if (msg.type === "DEVICES_UPDATE") {
+              availableDevices = msg.data.devices || [];
+              activeSpeakerId = msg.data.activeSpeakerId;
+              activeSpeakerName = msg.data.activeSpeakerName || "Cet appareil";
+              syncMode = msg.data.syncMode || "connect";
+              updateConnectUI();
+
+              // If I was previously playing audio but am no longer the speaker, PAUSE IMMEDIATELY!
+              if (!amISpeaker() && ytPlayer && ytPlayer.pauseVideo) {
+                try {
+                  if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                    ytPlayer.pauseVideo();
+                  }
+                } catch(e) {}
+              }
+            } else if (msg.type === "REMOTE_COMMAND") {
               const cmd = msg.data.action;
-              if (cmd === 'PLAY' && ytPlayer) ytPlayer.playVideo();
-              else if (cmd === 'PAUSE' && ytPlayer) ytPlayer.pauseVideo();
-              else if (cmd === 'NEXT') playNext();
-              else if (cmd === 'PREV') playPrev();
-              else if (cmd === 'SEEK' && ytPlayer) ytPlayer.seekTo(msg.data.position, true);
+              if (cmd === 'LOAD_TRACK') {
+                const track = msg.data.track;
+                currentPlaylist = [track, ...currentPlaylist.filter(t => t.id !== track.id)];
+                currentTrackIndex = 0;
+                syncUIWithTrack(track);
+                if (amISpeaker()) {
+                  currentPlayingVideoId = track.id;
+                  loadTrackDirect(track, msg.data.autoplay !== false);
+                  sendWs('UPDATE_STATE', { track: track, isPlaying: true, position: 0 });
+                }
+              } else if (cmd === 'PLAY') {
+                if (amISpeaker() && ytPlayer) {
+                  try { ytPlayer.playVideo(); } catch(e) {}
+                  setPlayState(true);
+                }
+              } else if (cmd === 'PAUSE') {
+                if (amISpeaker() && ytPlayer) {
+                  try { ytPlayer.pauseVideo(); } catch(e) {}
+                  setPlayState(false);
+                }
+              } else if (cmd === 'NEXT') {
+                if (amISpeaker()) playNext();
+              } else if (cmd === 'PREV') {
+                if (amISpeaker()) playPrev();
+              } else if (cmd === 'SEEK') {
+                lastSyncPosition = msg.data.position;
+                lastSyncTimestamp = Date.now();
+                if (amISpeaker() && ytPlayer && ytPlayer.seekTo) {
+                  try { ytPlayer.seekTo(msg.data.position, true); } catch(e) {}
+                }
+              }
             } else if (msg.type === "SYNC_STATE") {
-              if (msg.data.track) syncUIWithTrack(msg.data.track);
+              const state = msg.data;
+              if (state.track) {
+                syncUIWithTrack(state.track);
+                setPlayState(state.isPlaying);
+                lastSyncPosition = state.position || 0;
+                lastSyncTimestamp = state.timestamp || Date.now();
+
+                if (amISpeaker()) {
+                  // If speaker/jam and track differs, load it!
+                  if (currentPlayingVideoId !== state.track.id) {
+                    currentPlayingVideoId = state.track.id;
+                    loadTrackDirect(state.track, state.isPlaying);
+                  }
+                } else {
+                  // Remote device: ensure no ghost audio is playing!
+                  if (ytPlayer && ytPlayer.pauseVideo) {
+                    try {
+                      if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                        ytPlayer.pauseVideo();
+                      }
+                    } catch(e) {}
+                  }
+                }
+              }
             }
           } catch(e) {}
         };
+
         ws.onclose = () => {
           document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-zinc-600";
           setTimeout(initWebSocket, 3000);

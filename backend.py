@@ -32,30 +32,81 @@ feed_cache: Dict[str, Dict] = {}
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        # websocket -> dict info { id, name, type }
+        self.connections: Dict[WebSocket, dict] = {}
+        self.active_speaker_id: Optional[str] = None
+        self.sync_mode: str = "connect"  # "connect" (1 speaker) or "jam" (all play)
         self.current_state = {
             "track": None,
             "isPlaying": False,
             "position": 0,
-            "activeDevice": "pc"
+            "timestamp": int(time.time() * 1000),
+            "activeSpeakerId": None,
+            "activeSpeakerName": "Aucun",
+            "syncMode": "connect"
         }
+
+    def get_devices_list(self) -> List[dict]:
+        devs = []
+        for ws, info in list(self.connections.items()):
+            if info.get("id"):
+                devs.append({
+                    "id": info["id"],
+                    "name": info.get("name", "Appareil"),
+                    "type": info.get("type", "pc"),
+                    "isSpeaker": (info["id"] == self.active_speaker_id)
+                })
+        return devs
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.append(websocket)
-        await websocket.send_json({"type": "INIT_STATE", "data": self.current_state})
+        self.connections[websocket] = {"id": "", "name": "Appareil", "type": "pc"}
+        await websocket.send_json({
+            "type": "INIT_STATE",
+            "data": {
+                **self.current_state,
+                "devices": self.get_devices_list()
+            }
+        })
 
     def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+        info = self.connections.pop(websocket, None)
+        if info and info.get("id") == self.active_speaker_id:
+            # Reassign speaker to next available
+            remaining = [d for d in self.connections.values() if d.get("id")]
+            if remaining:
+                self.active_speaker_id = remaining[0]["id"]
+                self.current_state["activeSpeakerId"] = self.active_speaker_id
+                self.current_state["activeSpeakerName"] = remaining[0]["name"]
+            else:
+                self.active_speaker_id = None
+                self.current_state["activeSpeakerId"] = None
+                self.current_state["activeSpeakerName"] = "Aucun"
 
     async def broadcast(self, message: dict, sender: WebSocket = None):
-        for connection in self.active_connections:
-            if connection != sender:
+        for ws in list(self.connections.keys()):
+            if ws != sender:
                 try:
-                    await connection.send_json(message)
+                    await ws.send_json(message)
                 except Exception:
                     pass
+
+    async def broadcast_all(self, message: dict):
+        for ws in list(self.connections.keys()):
+            try:
+                await ws.send_json(message)
+            except Exception:
+                pass
+
+    async def send_to_device(self, device_id: str, message: dict) -> bool:
+        for ws, info in list(self.connections.items()):
+            if info.get("id") == device_id:
+                try:
+                    await ws.send_json(message)
+                    return True
+                except Exception:
+                    pass
+        return False
 
 manager = ConnectionManager()
 
@@ -266,13 +317,102 @@ async def websocket_endpoint(websocket: WebSocket):
             msg_type = data.get("type")
             payload = data.get("data", {})
 
-            if msg_type == "UPDATE_STATE":
+            if msg_type == "REGISTER_DEVICE":
+                dev_id = payload.get("id")
+                dev_name = payload.get("name", "Appareil")
+                dev_type = payload.get("type", "pc")
+                manager.connections[websocket] = {
+                    "id": dev_id,
+                    "name": dev_name,
+                    "type": dev_type
+                }
+                # If no active speaker yet, assign to first registered device
+                if not manager.active_speaker_id:
+                    manager.active_speaker_id = dev_id
+                    manager.current_state["activeSpeakerId"] = dev_id
+                    manager.current_state["activeSpeakerName"] = dev_name
+
+                await manager.broadcast_all({
+                    "type": "DEVICES_UPDATE",
+                    "data": {
+                        "devices": manager.get_devices_list(),
+                        "activeSpeakerId": manager.active_speaker_id,
+                        "activeSpeakerName": manager.current_state.get("activeSpeakerName", "Aucun"),
+                        "syncMode": manager.sync_mode
+                    }
+                })
+
+            elif msg_type == "UPDATE_STATE":
                 manager.current_state.update(payload)
-                await manager.broadcast({"type": "SYNC_STATE", "data": manager.current_state}, sender=websocket)
+                manager.current_state["timestamp"] = int(time.time() * 1000)
+                await manager.broadcast({
+                    "type": "SYNC_STATE",
+                    "data": manager.current_state
+                }, sender=websocket)
+
             elif msg_type == "CONTROL_COMMAND":
-                await manager.broadcast({"type": "REMOTE_COMMAND", "data": payload}, sender=websocket)
+                action = payload.get("action")
+                # If in jam mode, broadcast to everyone
+                if manager.sync_mode == "jam":
+                    await manager.broadcast({
+                        "type": "REMOTE_COMMAND",
+                        "data": payload
+                    }, sender=websocket)
+                else:
+                    # In connect mode: forward command to the active speaker
+                    if manager.active_speaker_id:
+                        sent = await manager.send_to_device(manager.active_speaker_id, {
+                            "type": "REMOTE_COMMAND",
+                            "data": payload
+                        })
+                        if not sent:
+                            await manager.broadcast({"type": "REMOTE_COMMAND", "data": payload}, sender=websocket)
+                    else:
+                        await manager.broadcast({"type": "REMOTE_COMMAND", "data": payload}, sender=websocket)
+
+            elif msg_type == "SET_ACTIVE_SPEAKER":
+                new_speaker_id = payload.get("deviceId")
+                manager.active_speaker_id = new_speaker_id
+                manager.current_state["activeSpeakerId"] = new_speaker_id
+                for ws, info in manager.connections.items():
+                    if info.get("id") == new_speaker_id:
+                        manager.current_state["activeSpeakerName"] = info.get("name", "Appareil")
+                        break
+                await manager.broadcast_all({
+                    "type": "DEVICES_UPDATE",
+                    "data": {
+                        "devices": manager.get_devices_list(),
+                        "activeSpeakerId": manager.active_speaker_id,
+                        "activeSpeakerName": manager.current_state.get("activeSpeakerName", "Aucun"),
+                        "syncMode": manager.sync_mode
+                    }
+                })
+
+            elif msg_type == "SET_SYNC_MODE":
+                new_mode = payload.get("syncMode", "connect")
+                manager.sync_mode = new_mode
+                manager.current_state["syncMode"] = new_mode
+                await manager.broadcast_all({
+                    "type": "DEVICES_UPDATE",
+                    "data": {
+                        "devices": manager.get_devices_list(),
+                        "activeSpeakerId": manager.active_speaker_id,
+                        "activeSpeakerName": manager.current_state.get("activeSpeakerName", "Aucun"),
+                        "syncMode": manager.sync_mode
+                    }
+                })
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        await manager.broadcast_all({
+            "type": "DEVICES_UPDATE",
+            "data": {
+                "devices": manager.get_devices_list(),
+                "activeSpeakerId": manager.active_speaker_id,
+                "activeSpeakerName": manager.current_state.get("activeSpeakerName", "Aucun"),
+                "syncMode": manager.sync_mode
+            }
+        })
     except Exception:
         manager.disconnect(websocket)
 
