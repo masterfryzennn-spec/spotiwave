@@ -99,8 +99,8 @@
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- INVISIBLE YOUTUBE AUDIO ENGINE -->
-  <div style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0.01;pointer-events:none;overflow:hidden;">
+  <!-- INVISIBLE YOUTUBE AUDIO ENGINE (Positioned on-screen but behind UI to avoid browser throttling) -->
+  <div style="position:fixed;bottom:0;right:0;width:200px;height:200px;opacity:0.001;pointer-events:none;z-index:-9999;">
     <div id="yt-player-box"></div>
   </div>
 
@@ -285,9 +285,14 @@
           <i data-lucide="skip-back" class="w-5 h-5"></i>
         </button>
         
+        <!-- PLAY / PAUSE BUTTON WITH DIRECT SVGS -->
         <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative">
-          <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5" id="play-icon"></i>
-          <i data-lucide="loader" class="w-5 h-5 text-black animate-spin hidden" id="track-buffering-spinner"></i>
+          <!-- Play Icon -->
+          <svg id="svg-play" class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          <!-- Pause Icon -->
+          <svg id="svg-pause" class="w-5 h-5 fill-black hidden" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <!-- Spinner -->
+          <svg id="svg-spinner" class="w-5 h-5 animate-spin hidden text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
         </button>
 
         <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition">
@@ -385,9 +390,13 @@
       <button onclick="playPrev()" class="text-white hover:scale-110 active:scale-95 transition">
         <i data-lucide="skip-back" class="w-8 h-8"></i>
       </button>
+      
+      <!-- Full Player Play/Pause button with SVGs -->
       <button onclick="togglePlay()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl">
-        <i data-lucide="play" id="full-play-icon" class="w-8 h-8 fill-black ml-1"></i>
+        <svg id="full-svg-play" class="w-8 h-8 fill-black ml-1" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        <svg id="full-svg-pause" class="w-8 h-8 fill-black hidden" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       </button>
+
       <button onclick="playNext()" class="text-white hover:scale-110 active:scale-95 transition">
         <i data-lucide="skip-forward" class="w-8 h-8"></i>
       </button>
@@ -437,25 +446,29 @@
 
     // YOUTUBE IFRAME API INITIALIZATION
     window.onYouTubeIframeAPIReady = function() {
-      ytPlayer = new YT.Player('yt-player-box', {
-        height: '1',
-        width: '1',
-        videoId: '',
-        playerVars: {
-          autoplay: 0,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-          onError: onPlayerError
-        }
-      });
+      try {
+        ytPlayer = new YT.Player('yt-player-box', {
+          height: '200',
+          width: '200',
+          videoId: '',
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0
+          },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+            onError: onPlayerError
+          }
+        });
+      } catch (err) {
+        console.error("YT Player init error:", err);
+      }
     };
 
     function onPlayerReady(event) {
@@ -467,26 +480,25 @@
     }
 
     function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.PLAYING) {
+      if (event.data === 1) { // PLAYING
         setBuffering(false);
         setPlayState(true);
         startProgressTracking();
-      } else if (event.data === YT.PlayerState.PAUSED) {
+      } else if (event.data === 2) { // PAUSED
         setPlayState(false);
         stopProgressTracking();
-      } else if (event.data === YT.PlayerState.BUFFERING) {
+      } else if (event.data === 3) { // BUFFERING
         setBuffering(true);
-      } else if (event.data === YT.PlayerState.ENDED) {
+      } else if (event.data === 0) { // ENDED
         stopProgressTracking();
         onTrackEnded();
       }
     }
 
     function onPlayerError(e) {
-      console.warn("Player Error:", e.data);
+      console.warn("Player Error code:", e.data);
       setBuffering(false);
-      // Automatically skip to next track on error
-      setTimeout(playNext, 1500);
+      setTimeout(playNext, 1200);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -677,10 +689,16 @@
     }
 
     function loadTrackDirect(track, autoplay) {
-      if (autoplay) {
-        ytPlayer.loadVideoById(track.id);
-      } else {
-        ytPlayer.cueVideoById(track.id);
+      try {
+        if (autoplay) {
+          ytPlayer.loadVideoById(track.id);
+          setPlayState(true);
+        } else {
+          ytPlayer.cueVideoById(track.id);
+          setPlayState(false);
+        }
+      } catch (e) {
+        console.warn("Direct play error:", e);
       }
     }
 
@@ -717,14 +735,24 @@
 
     function setBuffering(buffering) {
       isBuffering = buffering;
-      const spinner = document.getElementById('track-buffering-spinner');
-      const icon = document.getElementById('play-icon');
+      const spinner = document.getElementById('svg-spinner');
+      const play = document.getElementById('svg-play');
+      const pause = document.getElementById('svg-pause');
+      if (!spinner) return;
+
       if (buffering) {
         spinner.classList.remove('hidden');
-        icon.classList.add('hidden');
+        if (play) play.classList.add('hidden');
+        if (pause) pause.classList.add('hidden');
       } else {
         spinner.classList.add('hidden');
-        icon.classList.remove('hidden');
+        if (isPlaying) {
+          if (pause) pause.classList.remove('hidden');
+          if (play) play.classList.add('hidden');
+        } else {
+          if (play) play.classList.remove('hidden');
+          if (pause) pause.classList.add('hidden');
+        }
       }
     }
 
@@ -733,33 +761,49 @@
         sendWs('CONTROL_COMMAND', { action: isPlaying ? 'PAUSE' : 'PLAY' });
         return;
       }
-      if (!ytPlayer || !isYtReady) return;
+      if (!currentPlaylist || currentPlaylist.length === 0) return;
 
-      const state = ytPlayer.getPlayerState();
-      if (state === YT.PlayerState.PLAYING) {
-        ytPlayer.pauseVideo();
+      if (isPlaying) {
+        if (ytPlayer && ytPlayer.pauseVideo) {
+          try { ytPlayer.pauseVideo(); } catch(e) {}
+        }
+        setPlayState(false);
       } else {
-        ytPlayer.playVideo();
+        if (ytPlayer && ytPlayer.playVideo) {
+          try { ytPlayer.playVideo(); } catch(e) {}
+        } else {
+          loadTrack(currentTrackIndex, true);
+        }
+        setPlayState(true);
       }
     }
 
     function setPlayState(playing) {
       isPlaying = playing;
-      const playIcon = document.getElementById('play-icon');
-      const fullPlayIcon = document.getElementById('full-play-icon');
-      
-      if (playing) {
-        playIcon.setAttribute('data-lucide', 'pause');
-        fullPlayIcon.setAttribute('data-lucide', 'pause');
-        playIcon.classList.remove('ml-0.5');
-        fullPlayIcon.classList.remove('ml-1');
-      } else {
-        playIcon.setAttribute('data-lucide', 'play');
-        fullPlayIcon.setAttribute('data-lucide', 'play');
-        playIcon.classList.add('ml-0.5');
-        fullPlayIcon.classList.add('ml-1');
+      const p1 = document.getElementById('svg-play');
+      const pa1 = document.getElementById('svg-pause');
+      const p2 = document.getElementById('full-svg-play');
+      const pa2 = document.getElementById('full-svg-pause');
+
+      if (p1 && pa1) {
+        if (playing) {
+          p1.classList.add('hidden');
+          pa1.classList.remove('hidden');
+        } else {
+          pa1.classList.add('hidden');
+          p1.classList.remove('hidden');
+        }
       }
-      lucide.createIcons();
+      if (p2 && pa2) {
+        if (playing) {
+          p2.classList.add('hidden');
+          pa2.classList.remove('hidden');
+        } else {
+          pa2.classList.add('hidden');
+          p2.classList.remove('hidden');
+        }
+      }
+
       sendWs('UPDATE_STATE', { isPlaying: playing });
     }
 
@@ -781,9 +825,13 @@
         sendWs('CONTROL_COMMAND', { action: 'PREV' });
         return;
       }
-      if (ytPlayer && ytPlayer.getCurrentTime && ytPlayer.getCurrentTime() > 3) {
-        ytPlayer.seekTo(0, true);
-        return;
+      if (ytPlayer && ytPlayer.getCurrentTime) {
+        try {
+          if (ytPlayer.getCurrentTime() > 3) {
+            ytPlayer.seekTo(0, true);
+            return;
+          }
+        } catch(e) {}
       }
       currentTrackIndex = (currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
       loadTrack(currentTrackIndex, true);
@@ -791,9 +839,11 @@
 
     function onTrackEnded() {
       if (isRepeat) {
-        if (ytPlayer) {
-          ytPlayer.seekTo(0, true);
-          ytPlayer.playVideo();
+        if (ytPlayer && ytPlayer.seekTo) {
+          try {
+            ytPlayer.seekTo(0, true);
+            ytPlayer.playVideo();
+          } catch(e) {}
         }
       } else {
         playNext();
@@ -812,7 +862,7 @@
 
     function setVolume(val) {
       if (ytPlayer && ytPlayer.setVolume) {
-        ytPlayer.setVolume(val * 100);
+        try { ytPlayer.setVolume(val * 100); } catch(e) {}
       }
     }
 
@@ -822,12 +872,14 @@
       const clickX = e.clientX - rect.left;
       const width = rect.width;
       const seekRatio = Math.max(0, Math.min(1, clickX / width));
-      const duration = ytPlayer.getDuration();
-      if (duration) {
-        const target = seekRatio * duration;
-        ytPlayer.seekTo(target, true);
-        sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
-      }
+      try {
+        const duration = ytPlayer.getDuration();
+        if (duration) {
+          const target = seekRatio * duration;
+          ytPlayer.seekTo(target, true);
+          sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
+        }
+      } catch(e) {}
     }
 
     function formatTime(seconds) {
@@ -841,17 +893,19 @@
       stopProgressTracking();
       progressTimer = setInterval(() => {
         if (!ytPlayer || !ytPlayer.getCurrentTime) return;
-        const cur = ytPlayer.getCurrentTime() || 0;
-        const dur = ytPlayer.getDuration() || 0;
-        if (dur > 0) {
-          const pct = (cur / dur) * 100;
-          document.getElementById('progress-bar').style.width = `${pct}%`;
-          document.getElementById('full-progress-bar').style.width = `${pct}%`;
-          document.getElementById('current-time').innerText = formatTime(cur);
-          document.getElementById('full-current-time').innerText = formatTime(cur);
-          document.getElementById('duration-time').innerText = formatTime(dur);
-          document.getElementById('full-duration-time').innerText = formatTime(dur);
-        }
+        try {
+          const cur = ytPlayer.getCurrentTime() || 0;
+          const dur = ytPlayer.getDuration() || 0;
+          if (dur > 0) {
+            const pct = (cur / dur) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('full-progress-bar').style.width = `${pct}%`;
+            document.getElementById('current-time').innerText = formatTime(cur);
+            document.getElementById('full-current-time').innerText = formatTime(cur);
+            document.getElementById('duration-time').innerText = formatTime(dur);
+            document.getElementById('full-duration-time').innerText = formatTime(dur);
+          }
+        } catch(e) {}
       }, 250);
     }
 
@@ -871,7 +925,9 @@
       const btnText = document.getElementById('device-mode-text');
       const label = document.getElementById('device-role-label');
       if (isRemoteOnly) {
-        if (ytPlayer) ytPlayer.pauseVideo();
+        if (ytPlayer && ytPlayer.pauseVideo) {
+          try { ytPlayer.pauseVideo(); } catch(e) {}
+        }
         btnText.innerText = "Télécommande";
         label.innerText = "Mode : Télécommande";
       } else {
