@@ -775,8 +775,56 @@
       }
     }
 
+    let failedVideoIds = new Set();
     function onPlayerError(e) {
       setBuffering(false);
+      const currentTrack = currentPlaylist[currentTrackIndex];
+      const failedId = currentPlayingVideoId;
+      if (failedId) failedVideoIds.add(failedId);
+
+      // 1. If preloaded alternative IDs exist, try the next one immediately
+      if (currentTrack && currentTrack.alternativeIds && currentTrack.alternativeIds.length > 0) {
+        const altId = currentTrack.alternativeIds.shift();
+        if (altId && !failedVideoIds.has(altId)) {
+          showToast("Tentative avec une version audio libre...");
+          currentTrack.id = altId;
+          currentPlayingVideoId = altId;
+          saveResolvedTrack(currentTrack);
+          if (ytPlayer && ytPlayer.loadVideoById) {
+            setBuffering(true);
+            ytPlayer.loadVideoById(altId);
+            return;
+          }
+        }
+      }
+
+      // 2. Query resolve with excluded list to find another free version
+      if (currentTrack) {
+        showToast("Recherche d'une version audio libre...");
+        const excludeList = Array.from(failedVideoIds).join(',');
+        fetch(`/api/resolve?q=${encodeURIComponent(currentTrack.title + ' ' + currentTrack.artist)}&exclude=${encodeURIComponent(excludeList)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success && data.track && data.track.id && !failedVideoIds.has(data.track.id)) {
+              currentTrack.id = data.track.id;
+              currentTrack.alternativeIds = data.track.alternativeIds || [];
+              currentPlayingVideoId = data.track.id;
+              saveResolvedTrack(currentTrack);
+              if (ytPlayer && ytPlayer.loadVideoById) {
+                setBuffering(true);
+                ytPlayer.loadVideoById(data.track.id);
+              }
+            } else {
+              showToast("Titre non disponible, passage au suivant...");
+              setTimeout(playNext, 1200);
+            }
+          })
+          .catch(() => {
+            setTimeout(playNext, 1200);
+          });
+        return;
+      }
+
       showToast("Titre non disponible, passage au suivant...");
       setTimeout(playNext, 1200);
     }

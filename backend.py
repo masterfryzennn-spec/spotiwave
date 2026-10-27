@@ -258,19 +258,50 @@ async def import_spotify(url: str = Query(..., min_length=1)):
     except Exception as e:
         return JSONResponse(status_code=500, content={'success': False, 'error': str(e)})
 
+def clean_music_query(query: str) -> str:
+    q = re.sub(r'\(feat\..*?\)', '', query, flags=re.I)
+    q = re.sub(r'\[feat\..*?\]', '', q, flags=re.I)
+    q = re.sub(r'\(with.*?\)', '', q, flags=re.I)
+    q = re.sub(r'[-–]\s*Remaster.*', '', q, flags=re.I)
+    q = re.sub(r'\(Remaster.*?\)', '', q, flags=re.I)
+    q = re.sub(r'\[Remaster.*?\]', '', q, flags=re.I)
+    q = re.sub(r'\(Bonus Track.*?\)', '', q, flags=re.I)
+    q = re.sub(r'\(Radio Edit.*?\)', '', q, flags=re.I)
+    q = re.sub(r'\(Original Mix.*?\)', '', q, flags=re.I)
+    q = re.sub(r'\s+', ' ', q)
+    return q.strip()
+
 @app.get("/api/resolve")
-async def resolve_track_query(q: str = Query(..., min_length=1)):
+async def resolve_track_query(q: str = Query(..., min_length=1), exclude: Optional[str] = None):
     try:
-        # First attempt: search exact query in songs
-        results = ytm.search(q, filter="songs")
+        clean_q = clean_music_query(q)
+        excluded = [x.strip() for x in exclude.split(",")] if exclude else []
+
+        # 1. First attempt: search cleaned query in songs
+        results = ytm.search(clean_q, filter="songs") or []
+        
+        # 2. Second attempt: search general with 'audio'
         if not results:
-            # Fallback attempt: search in general
-            results = ytm.search(q)
-        if results and len(results) > 0:
-            for item in results:
-                track = format_track(item)
-                if track:
-                    return JSONResponse(content={"success": True, "track": track})
+            results = ytm.search(f"{clean_q} audio") or []
+
+        # 3. Third attempt: search raw query in songs
+        if not results and clean_q != q:
+            results = ytm.search(q, filter="songs") or []
+
+        valid_items = []
+        for item in results:
+            vid = item.get("videoId")
+            if vid and vid not in excluded:
+                t = format_track(item)
+                if t:
+                    valid_items.append(t)
+
+        if valid_items:
+            best_track = valid_items[0]
+            # Include alternative candidate IDs for automatic error-150 failover
+            best_track["alternativeIds"] = [x["id"] for x in valid_items[1:6] if x.get("id")]
+            return JSONResponse(content={"success": True, "track": best_track})
+
         return JSONResponse(status_code=404, content={"success": False, "error": "Titre introuvable"})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
