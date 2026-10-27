@@ -74,7 +74,6 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    /* Compact PC Mode */
     body.compact-mode #sidebar,
     body.compact-mode #page-content,
     body.compact-mode header,
@@ -127,14 +126,14 @@
       <!-- SPOTIFY CONNECT / SYNC STATUS -->
       <div class="bg-zinc-900/90 rounded-xl p-3 border border-zinc-800 text-xs space-y-2">
         <div class="flex items-center justify-between text-spotify-subtext font-bold uppercase tracking-wider text-[10px]">
-          <span>Appareils Connectés</span>
+          <span>Synchronisation Directe</span>
           <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-zinc-500 animate-pulse"></span>
         </div>
         <div class="flex items-center gap-2 text-white font-medium">
           <i data-lucide="cast" class="w-4 h-4 text-spotify-green"></i>
-          <span id="device-role-label">Mode : PC Principal</span>
+          <span id="device-role-label">PC Principal</span>
         </div>
-        <p class="text-[11px] text-zinc-400">Synchronisé en temps réel avec ton iPhone via WebSockets.</p>
+        <p class="text-[11px] text-zinc-400">Relié en temps réel avec ton iPhone.</p>
       </div>
 
       <div class="flex-1 bg-spotify-dark rounded-xl p-3 flex flex-col overflow-hidden border border-zinc-900">
@@ -151,13 +150,13 @@
       
       <!-- TOP BAR -->
       <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10 border-b border-white/5">
-        <div class="flex items-center gap-3 flex-1 max-w-md">
+        <div class="flex items-center gap-3 flex-1 max-w-lg">
           <div class="relative w-full">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
             <input 
               type="text" 
               id="global-search-input"
-              placeholder="Chercher n'importe quel titre ou artiste (ex: Daft Punk, Jul, Orelsan...)" 
+              placeholder="Rechercher parmi 100 millions de titres en direct..." 
               oninput="onSearchInput(this.value)"
               class="w-full bg-zinc-800 text-sm text-white placeholder-zinc-400 pl-9 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-spotify-green transition"
             >
@@ -168,13 +167,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Compact PC Mode Toggle -->
           <button onclick="toggleCompactMode()" title="Mode Allégé / Mini-Lecteur" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
             <i data-lucide="minimize-2" class="w-3.5 h-3.5 text-zinc-300"></i>
             <span>Mode Allégé</span>
           </button>
 
-          <!-- iOS Install Badge -->
           <button onclick="showInstallGuide()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
             <i data-lucide="smartphone" class="w-3.5 h-3.5 text-spotify-green"></i>
             <span class="hidden sm:inline">PWA iPhone</span>
@@ -182,13 +179,22 @@
         </div>
       </header>
 
+      <!-- CATEGORY PILLS BAR -->
+      <div class="px-4 md:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-zinc-950/20 backdrop-blur">
+        <button onclick="filterCategory('all')" id="cat-btn-all" class="px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition">Tout</button>
+        <button onclick="filterCategory('trending')" id="cat-btn-trending" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🔥 Tendances France</button>
+        <button onclick="filterCategory('top50')" id="cat-btn-top50" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🏆 Top 50 Hits</button>
+        <button onclick="filterCategory('rap')" id="cat-btn-rap" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🎤 Rap Français</button>
+        <button onclick="filterCategory('electro')" id="cat-btn-electro" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">⚡ Pop & Electro</button>
+      </div>
+
       <!-- SCROLLABLE PAGE BODY -->
       <div id="page-content" class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll space-y-8 pb-32">
         
-        <!-- SEARCH RESULTS SECTION (Shown when searching) -->
+        <!-- SEARCH RESULTS SECTION -->
         <section id="search-results-section" class="hidden">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">Résultats de recherche</h2>
+            <h2 class="text-xl font-bold tracking-tight">Résultats en direct</h2>
             <button onclick="clearSearch()" class="text-xs text-spotify-subtext hover:text-white">Effacer</button>
           </div>
           <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
@@ -198,28 +204,48 @@
         <section id="home-default-section">
           <div class="flex items-center justify-between mb-4">
             <h1 id="greeting-text" class="text-2xl md:text-3xl font-extrabold tracking-tight">Bonne écoute</h1>
-            <span class="text-xs px-2.5 py-1 rounded-full bg-spotify-green/10 text-spotify-green border border-spotify-green/20 font-semibold">Catalogue Illimité • 0 Pub</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-spotify-green/10 text-spotify-green border border-spotify-green/20 font-semibold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-spotify-green animate-pulse"></span>
+              Flux Live Spotify & HD
+            </span>
           </div>
           
           <!-- QUICK PICKS GRID -->
           <div id="quick-picks-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </section>
 
-        <!-- FEATURED SHELF -->
-        <section id="featured-shelf-section">
+        <!-- TENDANCES FRANCE EN DIRECT -->
+        <section id="section-trending">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">Tendances Actuelles</h2>
-            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Audio HD Direct</span>
+            <h2 class="text-xl font-bold tracking-tight">🔥 Tendances Actuelles en Direct</h2>
+            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Mis à jour aujourd'hui</span>
           </div>
-          <div id="featured-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="trending-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
         </section>
 
-        <!-- LOFI SHELF -->
-        <section id="lofi-shelf-section">
+        <!-- TOP 50 HITS -->
+        <section id="section-top50">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">Ambiance Focus & Lofi</h2>
+            <h2 class="text-xl font-bold tracking-tight">🏆 Top 50 Musique</h2>
+            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Les plus écoutés</span>
           </div>
-          <div id="lofi-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="top50-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </section>
+
+        <!-- RAP FR -->
+        <section id="section-rap">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold tracking-tight">🎤 Rap & Hip-Hop Français</h2>
+          </div>
+          <div id="rap-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </section>
+
+        <!-- ELECTRO & POP -->
+        <section id="section-electro">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold tracking-tight">⚡ Pop & Electro Hits</h2>
+          </div>
+          <div id="electro-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
         </section>
 
       </div>
@@ -233,8 +259,8 @@
     <div onclick="openMobilePlayer()" class="flex items-center gap-3 cursor-pointer flex-1 md:flex-initial max-w-[50%] md:max-w-xs">
       <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-12 h-12 rounded-md object-cover shadow-lg border border-white/5 flex-shrink-0" alt="Cover">
       <div class="overflow-hidden">
-        <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Prêt à jouer</p>
-        <p id="player-artist" class="text-xs text-spotify-subtext line-clamp-1">Recherchez n'importe quel titre</p>
+        <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Sélectionnez un titre</p>
+        <p id="player-artist" class="text-xs text-spotify-subtext line-clamp-1">SpotiWave HD</p>
       </div>
       <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2">
         <i data-lucide="heart" class="w-5 h-5"></i>
@@ -251,7 +277,6 @@
           <i data-lucide="skip-back" class="w-5 h-5"></i>
         </button>
         
-        <!-- PLAY / PAUSE BUTTON WITH LOADING SPINNER -->
         <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative">
           <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5" id="play-icon"></i>
           <i data-lucide="loader" class="w-5 h-5 text-black animate-spin hidden" id="track-buffering-spinner"></i>
@@ -265,7 +290,6 @@
         </button>
       </div>
 
-      <!-- Scrubber -->
       <div class="w-full flex items-center gap-2 text-[11px] text-spotify-subtext font-mono">
         <span id="current-time">0:00</span>
         <div class="relative flex-1 flex items-center h-4 cursor-pointer" onclick="handleSeekClick(event)">
@@ -279,7 +303,6 @@
 
     <!-- Volume & Controls -->
     <div class="hidden md:flex items-center gap-3 w-48 justify-end">
-      <!-- Remote Control Mode Switcher -->
       <button onclick="toggleDeviceRole()" id="device-role-btn" title="Basculer entre Télécommande iPhone et Lecteur Principal" class="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext flex items-center gap-1.5 border border-white/5">
         <i data-lucide="cast" class="w-3.5 h-3.5 text-spotify-green"></i>
         <span id="device-mode-text">Local</span>
@@ -387,77 +410,29 @@
   <!-- AUDIO ENGINE -->
   <audio id="audio-engine" preload="auto"></audio>
 
-  <!-- CLIENT LOGIC & SPOTIFY CONNECT WEBSOCKET -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // DEFAULT CURATED TRACKS (Fallback & Instant Play)
-    const DEFAULT_TRACKS = [
-      {
-        id: "4D7u5KF7SP8",
-        title: "Get Lucky",
-        artist: "Daft Punk ft. Pharrell Williams",
-        album: "Random Access Memories",
-        cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop",
-        duration: "4:08"
-      },
-      {
-        id: "jfKfPfyJRdk",
-        title: "Lofi Hip Hop Radio Beats",
-        artist: "Lofi Girl",
-        album: "Beats to Relax/Study to",
-        cover: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&h=500&fit=crop",
-        duration: "3:30"
-      },
-      {
-        id: "fJ9rUzIMcZQ",
-        title: "Bohemian Rhapsody",
-        artist: "Queen",
-        album: "A Night at the Opera",
-        cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop",
-        duration: "5:55"
-      },
-      {
-        id: "kXYiU_JCYtU",
-        title: "Numb",
-        artist: "Linkin Park",
-        album: "Meteora",
-        cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&h=500&fit=crop",
-        duration: "3:07"
-      },
-      {
-        id: "JGwWNGJdvx8",
-        title: "Shape of You",
-        artist: "Ed Sheeran",
-        album: "÷ (Divide)",
-        cover: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500&h=500&fit=crop",
-        duration: "3:53"
-      }
-    ];
-
-    let currentPlaylist = [...DEFAULT_TRACKS];
+    let liveFeedData = null;
+    let currentPlaylist = [];
     let currentTrackIndex = 0;
     let isPlaying = false;
     let isShuffle = false;
     let isRepeat = false;
     let isBuffering = false;
-    let isRemoteOnly = false; // If true, this device acts as remote control without local audio output
+    let isRemoteOnly = false;
     let searchTimeout = null;
     let likedTracks = JSON.parse(localStorage.getItem('spotiwave_likes') || '[]');
 
     const audio = document.getElementById('audio-engine');
     let ws = null;
 
-    // INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       updateGreeting();
-      renderQuickPicks();
-      renderFeaturedGrid();
-      renderLofiGrid();
       renderLikedSidebar();
-      loadTrack(0, false);
+      loadLiveFeed();
       initWebSocket();
 
-      // Audio Event Listeners
       audio.addEventListener('timeupdate', onTimeUpdate);
       audio.addEventListener('ended', onTrackEnded);
       audio.addEventListener('waiting', () => setBuffering(true));
@@ -467,67 +442,118 @@
       });
       audio.addEventListener('pause', () => setPlayState(false));
 
-      // Service Worker for PWA
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
       }
     });
 
-    // WEBSOCKET SPOTIFY CONNECT
-    function initWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      
+    // LOAD LIVE CHARTS FROM REAL CATALOG
+    async function loadLiveFeed() {
+      showSkeletons();
       try {
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-spotify-green";
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            handleWsMessage(msg);
-          } catch(e) {}
-        };
-
-        ws.onclose = () => {
-          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-zinc-600";
-          setTimeout(initWebSocket, 3000); // Auto reconnect
-        };
-      } catch (e) {
-        console.log("WS not available in static mode");
-      }
-    }
-
-    function handleWsMessage(msg) {
-      if (msg.type === "REMOTE_COMMAND") {
-        const cmd = msg.data.action;
-        if (cmd === 'PLAY') audio.play();
-        else if (cmd === 'PAUSE') audio.pause();
-        else if (cmd === 'NEXT') playNext();
-        else if (cmd === 'PREV') playPrev();
-        else if (cmd === 'SEEK') audio.currentTime = msg.data.position;
-      } else if (msg.type === "SYNC_STATE") {
-        const state = msg.data;
-        if (state.track) {
-          syncUIWithTrack(state.track);
+        const res = await fetch('/api/feed');
+        const json = await res.json();
+        if (json.success && json.data) {
+          liveFeedData = json.data;
+          renderAllFeeds();
+          if (liveFeedData.trending && liveFeedData.trending.length > 0) {
+            currentPlaylist = [...liveFeedData.trending];
+            loadTrack(0, false);
+          }
         }
+      } catch (e) {
+        console.log("Feed fetch error:", e);
       }
     }
 
-    function sendWs(type, data) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type, data }));
+    function showSkeletons() {
+      const skeletonHTML = Array(5).fill(0).map(() => `
+        <div class="bg-spotify-card p-3 rounded-lg flex flex-col border border-white/5 animate-pulse">
+          <div class="w-full aspect-square bg-zinc-800 rounded-md mb-3"></div>
+          <div class="h-3.5 bg-zinc-800 rounded w-3/4 mb-2"></div>
+          <div class="h-2.5 bg-zinc-800 rounded w-1/2"></div>
+        </div>
+      `).join('');
+      
+      document.getElementById('trending-tracks-grid').innerHTML = skeletonHTML;
+      document.getElementById('top50-tracks-grid').innerHTML = skeletonHTML;
+      document.getElementById('rap-tracks-grid').innerHTML = skeletonHTML;
+      document.getElementById('electro-tracks-grid').innerHTML = skeletonHTML;
+    }
+
+    function renderAllFeeds() {
+      if (!liveFeedData) return;
+
+      // Quick picks
+      const quickPicks = [...(liveFeedData.trending || []), ...(liveFeedData.top50 || [])].slice(0, 6);
+      document.getElementById('quick-picks-grid').innerHTML = quickPicks.map((t, idx) => `
+        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/60 transition rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
+          <img src="${t.cover}" class="w-14 h-14 object-cover flex-shrink-0" alt="${t.title}" loading="lazy">
+          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-1">${t.title}</span>
+          <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition shadow-lg flex-shrink-0">
+            <i data-lucide="play" class="w-4 h-4 fill-black ml-0.5"></i>
+          </div>
+        </div>
+      `).join('');
+
+      renderTrackGrid('trending-tracks-grid', liveFeedData.trending || []);
+      renderTrackGrid('top50-tracks-grid', liveFeedData.top50 || []);
+      renderTrackGrid('rap-tracks-grid', liveFeedData.rap || []);
+      renderTrackGrid('electro-tracks-grid', liveFeedData.electro || []);
+
+      lucide.createIcons();
+    }
+
+    function renderTrackGrid(containerId, tracks) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = tracks.map((t) => `
+        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
+          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
+            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}" loading="lazy">
+            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
+              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
+            </div>
+          </div>
+          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
+          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
+        </div>
+      `).join('');
+    }
+
+    // CATEGORY FILTER
+    function filterCategory(cat) {
+      const buttons = ['all', 'trending', 'top50', 'rap', 'electro'];
+      buttons.forEach(b => {
+        const btn = document.getElementById(`cat-btn-${b}`);
+        if (b === cat) {
+          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition";
+        } else {
+          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition";
+        }
+      });
+
+      const sections = {
+        trending: document.getElementById('section-trending'),
+        top50: document.getElementById('section-top50'),
+        rap: document.getElementById('section-rap'),
+        electro: document.getElementById('section-electro')
+      };
+
+      if (cat === 'all') {
+        Object.values(sections).forEach(s => s.classList.remove('hidden'));
+      } else {
+        Object.keys(sections).forEach(k => {
+          if (k === cat) sections[k].classList.remove('hidden');
+          else sections[k].classList.add('hidden');
+        });
       }
     }
 
-    // SEARCH AGAINST REAL CATALOG
+    // SEARCH
     function onSearchInput(query) {
       clearTimeout(searchTimeout);
       const spinner = document.getElementById('search-spinner');
-      
       if (!query.trim()) {
         clearSearch();
         return;
@@ -551,22 +577,12 @@
     function renderSearchResults(tracks) {
       document.getElementById('search-results-section').classList.remove('hidden');
       document.getElementById('home-default-section').classList.add('hidden');
-      document.getElementById('featured-shelf-section').classList.add('hidden');
-      document.getElementById('lofi-shelf-section').classList.add('hidden');
+      document.getElementById('section-trending').classList.add('hidden');
+      document.getElementById('section-top50').classList.add('hidden');
+      document.getElementById('section-rap').classList.add('hidden');
+      document.getElementById('section-electro').classList.add('hidden');
 
-      const container = document.getElementById('search-results-grid');
-      container.innerHTML = tracks.map((t, idx) => `
-        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
-          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
-            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}" loading="lazy">
-            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
-              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
-            </div>
-          </div>
-          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
-          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
-        </div>
-      `).join('');
+      renderTrackGrid('search-results-grid', tracks);
       lucide.createIcons();
     }
 
@@ -574,16 +590,18 @@
       document.getElementById('global-search-input').value = '';
       document.getElementById('search-results-section').classList.add('hidden');
       document.getElementById('home-default-section').classList.remove('hidden');
-      document.getElementById('featured-shelf-section').classList.remove('hidden');
-      document.getElementById('lofi-shelf-section').classList.remove('hidden');
+      document.getElementById('section-trending').classList.remove('hidden');
+      document.getElementById('section-top50').classList.remove('hidden');
+      document.getElementById('section-rap').classList.remove('hidden');
+      document.getElementById('section-electro').classList.remove('hidden');
     }
 
+    // AUDIO PLAYBACK
     function playRealTrack(track) {
       currentPlaylist = [track, ...currentPlaylist.filter(t => t.id !== track.id)];
       loadTrack(0, true);
     }
 
-    // AUDIO PLAYBACK & STREAMING
     function loadTrack(index, autoplay = true) {
       currentTrackIndex = index;
       const track = currentPlaylist[currentTrackIndex];
@@ -592,7 +610,6 @@
       syncUIWithTrack(track);
       setBuffering(true);
 
-      // Route through stream resolver
       audio.src = `/api/stream/${track.id}?redirect=true`;
 
       if (autoplay) {
@@ -602,7 +619,6 @@
         });
       }
 
-      // Sync across all connected devices via WebSocket
       sendWs('UPDATE_STATE', {
         track: track,
         isPlaying: autoplay,
@@ -614,23 +630,21 @@
       document.getElementById('player-title').innerText = track.title;
       document.getElementById('player-artist').innerText = track.artist;
       document.getElementById('player-thumb').src = track.cover;
-      document.getElementById('duration-time').innerText = track.duration || "0:00";
+      document.getElementById('duration-time').innerText = track.duration || "3:30";
 
-      // Full screen modal
       document.getElementById('full-player-title').innerText = track.title;
       document.getElementById('full-player-artist').innerText = track.artist;
       document.getElementById('full-player-artwork').src = track.cover;
       document.getElementById('full-backdrop').style.backgroundImage = `url('${track.cover}')`;
-      document.getElementById('full-duration-time').innerText = track.duration || "0:00";
+      document.getElementById('full-duration-time').innerText = track.duration || "3:30";
 
       updateLikeIcon();
 
-      // iOS Native Lock Screen & Dynamic Island
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: track.title,
           artist: track.artist,
-          album: track.album || "SpotiWave",
+          album: track.album || "SpotiWave Live",
           artwork: [
             { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
           ]
@@ -685,7 +699,6 @@
         fullPlayIcon.classList.add('ml-1');
       }
       lucide.createIcons();
-
       sendWs('UPDATE_STATE', { isPlaying: playing });
     }
 
@@ -769,7 +782,6 @@
       document.getElementById('full-current-time').innerText = cur;
     }
 
-    // COMPACT PC MODE TOGGLE
     function toggleCompactMode() {
       document.body.classList.toggle('compact-mode');
     }
@@ -788,9 +800,47 @@
       }
     }
 
-    // FAVORITES
+    // WEBSOCKETS
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      try {
+        ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-spotify-green";
+        };
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === "REMOTE_COMMAND") {
+              const cmd = msg.data.action;
+              if (cmd === 'PLAY') audio.play();
+              else if (cmd === 'PAUSE') audio.pause();
+              else if (cmd === 'NEXT') playNext();
+              else if (cmd === 'PREV') playPrev();
+              else if (cmd === 'SEEK') audio.currentTime = msg.data.position;
+            } else if (msg.type === "SYNC_STATE") {
+              if (msg.data.track) syncUIWithTrack(msg.data.track);
+            }
+          } catch(e) {}
+        };
+        ws.onclose = () => {
+          document.getElementById('ws-status-dot').className = "w-2 h-2 rounded-full bg-zinc-600";
+          setTimeout(initWebSocket, 3000);
+        };
+      } catch (e) {}
+    }
+
+    function sendWs(type, data) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type, data }));
+      }
+    }
+
+    // LIKES
     function toggleLikeCurrent() {
       const track = currentPlaylist[currentTrackIndex];
+      if (!track) return;
       const idx = likedTracks.findIndex(item => item.id === track.id);
       if (idx > -1) {
         likedTracks.splice(idx, 1);
@@ -804,6 +854,7 @@
 
     function updateLikeIcon() {
       const track = currentPlaylist[currentTrackIndex];
+      if (!track) return;
       const isLiked = likedTracks.some(item => item.id === track.id);
       const btn = document.getElementById('like-btn');
       const fullIcon = document.getElementById('full-like-icon');
@@ -826,7 +877,7 @@
         container.innerHTML = `<p class="text-xs text-zinc-500 italic p-2">Aucun favori pour l'instant</p>`;
         return;
       }
-      container.innerHTML = likedTracks.map((t, idx) => `
+      container.innerHTML = likedTracks.map((t) => `
         <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="flex items-center gap-2 p-1.5 rounded-md hover:bg-white/5 cursor-pointer">
           <img src="${t.cover}" class="w-9 h-9 rounded object-cover flex-shrink-0">
           <div class="overflow-hidden">
@@ -843,58 +894,6 @@
       if (hour >= 18) text = "Bonsoir";
       else if (hour >= 12) text = "Bon après-midi";
       document.getElementById('greeting-text').innerText = text;
-    }
-
-    function renderQuickPicks() {
-      const container = document.getElementById('quick-picks-grid');
-      container.innerHTML = DEFAULT_TRACKS.slice(0, 6).map((t, idx) => `
-        <div onclick="loadTrack(${idx}, true)" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/60 transition rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
-          <img src="${t.cover}" class="w-14 h-14 object-cover flex-shrink-0" alt="${t.title}">
-          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-1">${t.title}</span>
-          <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition shadow-lg flex-shrink-0">
-            <i data-lucide="play" class="w-4 h-4 fill-black ml-0.5"></i>
-          </div>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
-    function renderFeaturedGrid() {
-      const container = document.getElementById('featured-tracks-grid');
-      container.innerHTML = DEFAULT_TRACKS.map((t, idx) => `
-        <div onclick="loadTrack(${idx}, true)" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
-          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
-            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}">
-            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
-              <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
-            </div>
-          </div>
-          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
-          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
-    function renderLofiGrid() {
-      const container = document.getElementById('lofi-tracks-grid');
-      const reversed = [...DEFAULT_TRACKS].reverse();
-      container.innerHTML = reversed.map((t) => {
-        const origIdx = DEFAULT_TRACKS.findIndex(item => item.id === t.id);
-        return `
-          <div onclick="loadTrack(${origIdx}, true)" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5">
-            <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
-              <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}">
-              <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
-                <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5"></i>
-              </div>
-            </div>
-            <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
-            <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.album}</p>
-          </div>
-        `;
-      }).join('');
-      lucide.createIcons();
     }
 
     function openMobilePlayer() {

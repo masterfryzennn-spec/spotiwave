@@ -2,6 +2,9 @@ import os
 import sys
 import time
 import socket
+import re
+import urllib.request
+import json
 from typing import Dict, List, Optional
 from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
@@ -23,10 +26,10 @@ app.add_middleware(
 DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 ytm = YTMusic()
 
-# Memory cache for audio stream URLs to make playback instantaneous
+# Memory caches
 stream_cache: Dict[str, Dict] = {}
+feed_cache: Dict[str, Dict] = {}
 
-# Active WebSocket connections for Spotify Connect style syncing
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -40,7 +43,6 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
-        # Send current player state on connect
         await websocket.send_json({"type": "INIT_STATE", "data": self.current_state})
 
     def disconnect(self, websocket: WebSocket):
@@ -62,28 +64,77 @@ def get_best_thumbnail(thumbnails: list) -> str:
         return "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
     return thumbnails[-1].get("url", "")
 
+def format_track(item: dict) -> Optional[dict]:
+    video_id = item.get("videoId")
+    if not video_id:
+        return None
+    artists = ", ".join([a.get("name", "") for a in item.get("artists", [])]) if item.get("artists") else "Artiste Inconnu"
+    album = item.get("album", {}).get("name", "") if item.get("album") else ""
+    cover = get_best_thumbnail(item.get("thumbnails", []))
+    return {
+        "id": video_id,
+        "title": item.get("title", "Titre Inconnu"),
+        "artist": artists,
+        "album": album,
+        "duration": item.get("duration", "3:30"),
+        "cover": cover
+    }
+
+@app.get("/api/feed")
+async def get_live_feed():
+    now = time.time()
+    if "home_feed" in feed_cache and (now - feed_cache["home_feed"]["time"]) < 3600:
+        return JSONResponse(content={"success": True, "data": feed_cache["home_feed"]["data"]})
+
+    try:
+        charts_fr = ytm.get_charts(country='FR')
+        videos_fr = charts_fr.get('videos', [])
+        
+        trending_tracks = []
+        top50_tracks = []
+
+        if len(videos_fr) > 0:
+            p_trend = ytm.get_playlist(videos_fr[0]['playlistId'])
+            for t in p_trend.get('tracks', [])[:15]:
+                formatted = format_track(t)
+                if formatted:
+                    trending_tracks.append(formatted)
+
+        if len(videos_fr) > 1:
+            p_top = ytm.get_playlist(videos_fr[1]['playlistId'])
+            for t in p_top.get('tracks', [])[:20]:
+                formatted = format_track(t)
+                if formatted:
+                    top50_tracks.append(formatted)
+
+        # Rap FR & Global hits search
+        rap_results = ytm.search("Top Rap Français", filter="songs")[:15]
+        rap_tracks = [format_track(t) for t in rap_results if format_track(t)]
+
+        electro_results = ytm.search("Top Hits Pop Electro", filter="songs")[:15]
+        electro_tracks = [format_track(t) for t in electro_results if format_track(t)]
+
+        feed_data = {
+            "trending": trending_tracks,
+            "top50": top50_tracks,
+            "rap": rap_tracks,
+            "electro": electro_tracks
+        }
+
+        feed_cache["home_feed"] = {"time": now, "data": feed_data}
+        return JSONResponse(content={"success": True, "data": feed_data})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
 @app.get("/api/search")
 async def search_tracks(q: str = Query(..., min_length=1)):
     try:
         results = ytm.search(q, filter="songs")
         tracks = []
-        for item in results[:20]:
-            video_id = item.get("videoId")
-            if not video_id:
-                continue
-            
-            artists = ", ".join([a.get("name", "") for a in item.get("artists", [])]) or "Artiste Inconnu"
-            album = item.get("album", {}).get("name", "") if item.get("album") else ""
-            cover = get_best_thumbnail(item.get("thumbnails", []))
-
-            tracks.append({
-                "id": video_id,
-                "title": item.get("title", "Titre Inconnu"),
-                "artist": artists,
-                "album": album,
-                "duration": item.get("duration", "0:00"),
-                "cover": cover
-            })
+        for item in results[:25]:
+            formatted = format_track(item)
+            if formatted:
+                tracks.append(formatted)
         return JSONResponse(content={"success": True, "tracks": tracks})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
@@ -91,7 +142,6 @@ async def search_tracks(q: str = Query(..., min_length=1)):
 @app.get("/api/stream/{video_id}")
 async def get_stream_url(video_id: str, redirect: bool = False):
     now = time.time()
-    # Check cache (valid 3 hours)
     if video_id in stream_cache and (now - stream_cache[video_id]["cached_at"]) < 10800:
         url = stream_cache[video_id]["url"]
         if redirect:
@@ -133,14 +183,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 manager.current_state.update(payload)
                 await manager.broadcast({"type": "SYNC_STATE", "data": manager.current_state}, sender=websocket)
             elif msg_type == "CONTROL_COMMAND":
-                # Remote control command (play/pause/next/prev/seek)
                 await manager.broadcast({"type": "REMOTE_COMMAND", "data": payload}, sender=websocket)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
         manager.disconnect(websocket)
 
-# Static files & PWA routes
 @app.get("/")
 async def get_index():
     return FileResponse(os.path.join(DIR_PATH, "index.html"))
@@ -170,10 +218,6 @@ def get_local_ip():
 if __name__ == "__main__":
     import uvicorn
     local_ip = get_local_ip()
-    print("\n" + "="*60)
-    print("  SPOTIWAVE CLOUD / LOCAL BACKEND READY")
-    print("="*60)
-    print(f" [PC]     : http://localhost:8000")
-    print(f" [iPhone] : http://{local_ip}:8000")
-    print("="*60 + "\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
+    port = int(os.environ.get("PORT", 8000))
+    print(f"SpotiWave running on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
