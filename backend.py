@@ -153,6 +153,11 @@ async def get_stream_url(video_id: str, redirect: bool = False):
             "format": "bestaudio/best",
             "quiet": True,
             "no_warnings": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios", "mweb"]
+                }
+            }
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
