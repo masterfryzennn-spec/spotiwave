@@ -278,15 +278,24 @@
     <!-- Central Controls & Scrubber -->
     <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl px-2">
       <div class="flex items-center gap-4">
-        <button onclick="toggleShuffle()" id="shuffle-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block cursor-pointer p-1">
-          <i data-lucide="shuffle" class="w-4 h-4"></i>
+        <!-- SHUFFLE BUTTON -->
+        <button onclick="toggleShuffle()" id="shuffle-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-1.5" title="Lecture aléatoire">
+          <svg class="w-4 h-4 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+          <span id="shuffle-dot" class="w-1 h-1 rounded-full bg-spotify-green mt-0.5 hidden"></span>
         </button>
-        <button onclick="playPrev()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95">
-          <i data-lucide="skip-back" class="w-5 h-5"></i>
+
+        <button onclick="playPrev()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95" title="Précédent">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
         </button>
         
         <!-- PLAY / PAUSE BUTTON WITH DIRECT SVGS -->
-        <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative cursor-pointer z-40">
+        <button onclick="togglePlay()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-md relative cursor-pointer z-40" title="Lecture / Pause">
           <!-- Play Icon -->
           <svg id="svg-play" class="w-5 h-5 fill-black ml-0.5 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           <!-- Pause Icon -->
@@ -295,11 +304,19 @@
           <svg id="svg-spinner" class="w-5 h-5 animate-spin hidden text-black pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
         </button>
 
-        <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95">
-          <i data-lucide="skip-forward" class="w-5 h-5"></i>
+        <button onclick="playNext()" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1 active:scale-95" title="Suivant">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
         </button>
-        <button onclick="toggleRepeat()" id="repeat-btn" class="text-spotify-subtext hover:text-white transition hidden sm:inline-block cursor-pointer p-1">
-          <i data-lucide="repeat" class="w-4 h-4"></i>
+
+        <!-- REPEAT BUTTON -->
+        <button onclick="toggleRepeat()" id="repeat-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-1.5" title="Répéter">
+          <svg class="w-4 h-4 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <span id="repeat-dot" class="w-1 h-1 rounded-full bg-spotify-green mt-0.5 hidden"></span>
         </button>
       </div>
 
@@ -384,24 +401,41 @@
     </div>
 
     <div class="flex items-center justify-between px-4 pb-8">
-      <button onclick="toggleShuffle()" class="text-white/60 hover:text-white">
-        <i data-lucide="shuffle" class="w-6 h-6"></i>
+      <!-- Full Modal Shuffle -->
+      <button onclick="toggleShuffle()" id="full-shuffle-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-2" title="Lecture aléatoire">
+        <svg class="w-6 h-6 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+        <span id="full-shuffle-dot" class="w-1.5 h-1.5 rounded-full bg-spotify-green mt-1 hidden"></span>
       </button>
-      <button onclick="playPrev()" class="text-white hover:scale-110 active:scale-95 transition">
-        <i data-lucide="skip-back" class="w-8 h-8"></i>
+
+      <button onclick="playPrev()" class="text-white hover:scale-110 active:scale-95 transition cursor-pointer p-2">
+        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       
       <!-- Full Player Play/Pause button with SVGs -->
-      <button onclick="togglePlay()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl">
-        <svg id="full-svg-play" class="w-8 h-8 fill-black ml-1" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-        <svg id="full-svg-pause" class="w-8 h-8 fill-black hidden" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <button onclick="togglePlay()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl cursor-pointer">
+        <svg id="full-svg-play" class="w-8 h-8 fill-black ml-1 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        <svg id="full-svg-pause" class="w-8 h-8 fill-black hidden pointer-events-none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       </button>
 
-      <button onclick="playNext()" class="text-white hover:scale-110 active:scale-95 transition">
-        <i data-lucide="skip-forward" class="w-8 h-8"></i>
+      <button onclick="playNext()" class="text-white hover:scale-110 active:scale-95 transition cursor-pointer p-2">
+        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
       </button>
-      <button onclick="toggleRepeat()" class="text-white/60 hover:text-white">
-        <i data-lucide="repeat" class="w-6 h-6"></i>
+
+      <!-- Full Modal Repeat -->
+      <button onclick="toggleRepeat()" id="full-repeat-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-2" title="Répéter">
+        <svg class="w-6 h-6 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="17 1 21 5 17 9"></polyline>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <polyline points="7 23 3 19 7 15"></polyline>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+        <span id="full-repeat-dot" class="w-1.5 h-1.5 rounded-full bg-spotify-green mt-1 hidden"></span>
       </button>
     </div>
   </div>
@@ -852,12 +886,81 @@
 
     function toggleShuffle() {
       isShuffle = !isShuffle;
-      document.getElementById('shuffle-btn').classList.toggle('text-spotify-green', isShuffle);
+      updateShuffleUI();
+      showToast(isShuffle ? "Lecture aléatoire activée" : "Lecture aléatoire désactivée");
+    }
+
+    function updateShuffleUI() {
+      const btn = document.getElementById('shuffle-btn');
+      const dot = document.getElementById('shuffle-dot');
+      const fullBtn = document.getElementById('full-shuffle-btn');
+      const fullDot = document.getElementById('full-shuffle-dot');
+
+      [btn, fullBtn].forEach(b => {
+        if (!b) return;
+        if (isShuffle) {
+          b.classList.remove('text-zinc-400');
+          b.classList.add('text-spotify-green');
+        } else {
+          b.classList.remove('text-spotify-green');
+          b.classList.add('text-zinc-400');
+        }
+      });
+
+      [dot, fullDot].forEach(d => {
+        if (!d) return;
+        if (isShuffle) d.classList.remove('hidden');
+        else d.classList.add('hidden');
+      });
     }
 
     function toggleRepeat() {
       isRepeat = !isRepeat;
-      document.getElementById('repeat-btn').classList.toggle('text-spotify-green', isRepeat);
+      updateRepeatUI();
+      showToast(isRepeat ? "Répétition activée" : "Répétition désactivée");
+    }
+
+    function updateRepeatUI() {
+      const btn = document.getElementById('repeat-btn');
+      const dot = document.getElementById('repeat-dot');
+      const fullBtn = document.getElementById('full-repeat-btn');
+      const fullDot = document.getElementById('full-repeat-dot');
+
+      [btn, fullBtn].forEach(b => {
+        if (!b) return;
+        if (isRepeat) {
+          b.classList.remove('text-zinc-400');
+          b.classList.add('text-spotify-green');
+        } else {
+          b.classList.remove('text-spotify-green');
+          b.classList.add('text-zinc-400');
+        }
+      });
+
+      [dot, fullDot].forEach(d => {
+        if (!d) return;
+        if (isRepeat) d.classList.remove('hidden');
+        else d.classList.add('hidden');
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(text) {
+      let toast = document.getElementById('spotiwave-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'spotiwave-toast';
+        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl border border-white/10 z-50 transition-all duration-300 opacity-0 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = text;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 1600);
     }
 
     let currentVolume = 80;
