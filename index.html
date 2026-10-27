@@ -100,7 +100,7 @@
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
   <!-- INVISIBLE YOUTUBE AUDIO ENGINE -->
-  <div style="position: fixed; top: -1000px; left: -1000px; width: 200px; height: 200px; pointer-events: none; opacity: 0.001;">
+  <div style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0.01; z-index: -1;">
     <div id="yt-player-box"></div>
   </div>
 
@@ -728,13 +728,16 @@
           width: '200',
           videoId: '',
           playerVars: {
-            autoplay: 0,
+            autoplay: 1,
             controls: 0,
             disablekb: 1,
             fs: 0,
             modestbranding: 1,
             playsinline: 1,
-            rel: 0
+            rel: 0,
+            enablejsapi: 1,
+            origin: window.location.origin,
+            widget_referrer: window.location.href
           },
           events: {
             onReady: onPlayerReady,

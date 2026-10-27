@@ -277,14 +277,22 @@ async def resolve_track_query(q: str = Query(..., min_length=1), exclude: Option
         clean_q = clean_music_query(q)
         excluded = [x.strip() for x in exclude.split(",")] if exclude else []
 
-        # 1. First attempt: search cleaned query in songs
+        # 1. Search cleaned query in songs
         results = ytm.search(clean_q, filter="songs") or []
         
-        # 2. Second attempt: search general with 'audio'
-        if not results:
-            results = ytm.search(f"{clean_q} audio") or []
+        # 2. Also append general audio/topic results for non-blocked alternatives
+        try:
+            audio_results = ytm.search(f"{clean_q} audio") or []
+            existing_ids = set([r.get("videoId") for r in results if r.get("videoId")])
+            for a in audio_results:
+                vid = a.get("videoId")
+                if vid and vid not in existing_ids:
+                    results.append(a)
+                    existing_ids.add(vid)
+        except Exception:
+            pass
 
-        # 3. Third attempt: search raw query in songs
+        # 3. Third attempt: search raw query in songs if still empty
         if not results and clean_q != q:
             results = ytm.search(q, filter="songs") or []
 
