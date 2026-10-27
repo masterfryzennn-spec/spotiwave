@@ -602,7 +602,7 @@
       loadTrack(0, true);
     }
 
-    function loadTrack(index, autoplay = true) {
+    async function loadTrack(index, autoplay = true) {
       currentTrackIndex = index;
       const track = currentPlaylist[currentTrackIndex];
       if (!track) return;
@@ -610,13 +610,24 @@
       syncUIWithTrack(track);
       setBuffering(true);
 
-      audio.src = `/api/stream/${track.id}?redirect=true`;
-
-      if (autoplay) {
-        audio.play().catch(e => {
+      try {
+        const res = await fetch(`/api/stream/${track.id}`);
+        const data = await res.json();
+        if (data.url) {
+          audio.src = data.url;
+          if (autoplay) {
+            audio.play().catch(e => {
+              setBuffering(false);
+              console.log('Play err:', e);
+            });
+          }
+        } else {
           setBuffering(false);
-          console.log('Autoplay:', e);
-        });
+          console.warn('Audio stream not available for track:', track.title);
+        }
+      } catch (e) {
+        setBuffering(false);
+        console.error('Stream load error:', e);
       }
 
       sendWs('UPDATE_STATE', {

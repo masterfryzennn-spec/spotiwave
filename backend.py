@@ -139,15 +139,25 @@ async def search_tracks(q: str = Query(..., min_length=1)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
-@app.get("/api/stream/{video_id}")
-async def get_stream_url(video_id: str, redirect: bool = False):
-    now = time.time()
-    if video_id in stream_cache and (now - stream_cache[video_id]["cached_at"]) < 10800:
-        url = stream_cache[video_id]["url"]
-        if redirect:
-            return RedirectResponse(url=url, status_code=307)
-        return JSONResponse(content={"url": url})
+def extract_audio_url(video_id: str) -> Optional[str]:
+    # 1. First try public high-speed Invidious API (bypasses datacenter bot blocks)
+    invidious_endpoints = [
+        f"https://yt.chocolatemoo53.com/api/v1/videos/{video_id}",
+        f"https://invidious.jing.rocks/api/v1/videos/{video_id}"
+    ]
+    for ep in invidious_endpoints:
+        try:
+            req = urllib.request.Request(ep, headers={"User-Agent": "Mozilla/5.0"})
+            res = urllib.request.urlopen(req, timeout=4)
+            data = json.loads(res.read())
+            audios = [f for f in data.get("adaptiveFormats", []) if "audio" in f.get("type", "")]
+            if audios:
+                audios.sort(key=lambda x: int(x.get("bitrate", 0)), reverse=True)
+                return audios[0]["url"]
+        except Exception:
+            pass
 
+    # 2. Second fallback: yt-dlp with mobile clients
     try:
         ydl_opts = {
             "format": "bestaudio/best",
@@ -161,19 +171,33 @@ async def get_stream_url(video_id: str, redirect: bool = False):
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-            url = info.get("url")
-            if not url:
-                return JSONResponse(status_code=404, content={"error": "Audio stream not found"})
+            return info.get("url")
+    except Exception:
+        pass
 
-            stream_cache[video_id] = {
-                "url": url,
-                "cached_at": now
-            }
-            if redirect:
-                return RedirectResponse(url=url, status_code=307)
-            return JSONResponse(content={"url": url})
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    return None
+
+@app.get("/api/stream/{video_id}")
+async def get_stream_url(video_id: str, redirect: bool = False):
+    now = time.time()
+    if video_id in stream_cache and (now - stream_cache[video_id]["cached_at"]) < 10800:
+        url = stream_cache[video_id]["url"]
+        if redirect:
+            return RedirectResponse(url=url, status_code=307)
+        return JSONResponse(content={"url": url})
+
+    url = extract_audio_url(video_id)
+    if url:
+        stream_cache[video_id] = {
+            "url": url,
+            "cached_at": now
+        }
+        if redirect:
+            return RedirectResponse(url=url, status_code=307)
+        return JSONResponse(content={"url": url})
+
+    return JSONResponse(status_code=404, content={"error": "Audio stream not found"})
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
