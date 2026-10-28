@@ -1,7 +1,7 @@
 {
-  "name": "SpotiWave — Lecteur Musique PWA",
-  "short_name": "SpotiWave",
-  "description": "Lecteur audio PWA fluide et sans publicité inspiré de Spotify",
+  "name": "Yanis — Lecteur Musique PWA",
+  "short_name": "Yanis",
+  "description": "Lecteur audio PWA fluide et sans publicité",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
