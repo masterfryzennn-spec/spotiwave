@@ -164,6 +164,35 @@
       display: inline-block;
       text-shadow: 0 0 24px rgba(30, 215, 96, 0.25);
     }
+
+    /* Spotify Karaoke Lyrics Styling */
+    .lyric-line {
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      transition: all 0.28s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .lyric-line.is-active {
+      color: #ffffff !important;
+      opacity: 1 !important;
+      font-weight: 900 !important;
+      transform: scale(1.03);
+      transform-origin: left center;
+      text-shadow: 0 4px 24px rgba(255, 255, 255, 0.35);
+    }
+    .lyric-line.is-passed {
+      color: rgba(255, 255, 255, 0.45) !important;
+      opacity: 0.75;
+      font-weight: 800;
+    }
+    .lyric-line.is-upcoming {
+      color: rgba(255, 255, 255, 0.25) !important;
+      opacity: 0.45;
+      font-weight: 800;
+    }
+    .lyric-line:hover {
+      color: rgba(255, 255, 255, 0.9) !important;
+      opacity: 0.95;
+    }
   </style>
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
@@ -541,7 +570,11 @@
     </div>
 
     <!-- Volume & Controls -->
-    <div class="hidden md:flex items-center gap-3 w-56 justify-end z-30">
+    <div class="hidden md:flex items-center gap-3 w-64 justify-end z-30">
+      <button onclick="toggleLyricsView()" id="lyrics-btn" title="Paroles (Karaoké)" class="p-2 rounded-full hover:bg-white/10 text-spotify-subtext hover:text-white transition cursor-pointer">
+        <i data-lucide="mic-2" class="w-4 h-4"></i>
+      </button>
+
       <button onclick="openConnectModal()" id="connect-device-btn" title="Gérer les appareils Connect" class="text-xs px-2.5 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-spotify-subtext hover:text-white flex items-center gap-1.5 border border-white/5 cursor-pointer transition">
         <i data-lucide="cast" id="connect-cast-icon" class="w-3.5 h-3.5 text-spotify-green"></i>
         <span id="device-mode-text" class="text-[11px] font-medium text-zinc-200 max-w-[90px] truncate">Appareils</span>
@@ -583,9 +616,14 @@
           <span id="full-connect-label">Synchronisé</span>
         </p>
       </div>
-      <button onclick="toggleLikeCurrent()" class="p-2 -mr-2">
-        <i data-lucide="heart" id="full-like-icon" class="w-6 h-6 text-spotify-subtext"></i>
-      </button>
+      <div class="flex items-center gap-1 -mr-2">
+        <button onclick="toggleLyricsView()" class="p-2 text-white/70 hover:text-white transition" title="Paroles">
+          <i data-lucide="mic-2" class="w-5 h-5"></i>
+        </button>
+        <button onclick="toggleLikeCurrent()" class="p-2">
+          <i data-lucide="heart" id="full-like-icon" class="w-6 h-6 text-spotify-subtext"></i>
+        </button>
+      </div>
     </div>
 
     <div class="flex-1 flex items-center justify-center py-4">
@@ -643,6 +681,45 @@
         </svg>
         <span id="full-repeat-dot" class="w-1.5 h-1.5 rounded-full bg-spotify-green mt-1 hidden"></span>
       </button>
+    </div>
+  </div>
+
+  <!-- SPOTIFY LYRICS FULLSCREEN VIEW -->
+  <div id="lyrics-view-modal" class="fixed inset-0 z-40 bg-[#4a121a] flex flex-col transition-all duration-500 translate-y-full opacity-0 pointer-events-none pb-24 md:pb-28">
+    <div id="lyrics-bg-gradient" class="absolute inset-0 bg-gradient-to-b from-[#4a121a] via-[#24080d] to-[#121212] -z-10"></div>
+
+    <!-- Lyrics Top Header Bar -->
+    <div class="flex items-center justify-between px-6 md:px-12 py-5 border-b border-white/10 z-10 select-none">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+          <i data-lucide="mic-2" class="w-4 h-4 text-spotify-green"></i>
+        </div>
+        <div>
+          <p id="lyrics-header-context" class="text-xs uppercase font-extrabold tracking-widest text-white/70">Paroles en direct</p>
+          <p id="lyrics-header-song" class="text-sm font-bold text-white truncate max-w-xs md:max-w-md">Titre du morceau</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="lyrics-sync-badge" class="hidden sm:flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-white/10 text-white backdrop-blur border border-white/10">
+          <span class="w-2 h-2 rounded-full bg-spotify-green animate-pulse"></span>
+          <span>Karaoké Synchro</span>
+        </span>
+        <button onclick="closeLyricsView()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer" title="Fermer les paroles">
+          <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lyrics Lines Scrollable Area -->
+    <div id="lyrics-scroll-container" class="flex-1 overflow-y-auto px-6 sm:px-12 md:px-24 py-16 max-w-5xl mx-auto w-full custom-scroll space-y-6 sm:space-y-8 select-none">
+      <!-- Loading placeholder -->
+      <div id="lyrics-loading" class="py-20 text-center space-y-4">
+        <div class="w-10 h-10 border-4 border-spotify-green border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-lg font-bold text-white/80">Synchronisation des paroles...</p>
+      </div>
+      <!-- Lines rendered here -->
+      <div id="lyrics-lines-box" class="space-y-6 sm:space-y-8 pb-32"></div>
     </div>
   </div>
 
@@ -2249,6 +2326,9 @@
       updateLikeIcon();
       refreshIcons();
       updatePlayingTrackIndicators();
+      if (isLyricsViewOpen) {
+        loadLyricsForTrack(track);
+      }
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -2585,6 +2665,7 @@
                   });
                 } catch(e) {}
               }
+              updateLyricsHighlight(cur);
             }
           } catch(e) {}
         } else {
@@ -2603,6 +2684,7 @@
           document.getElementById('full-current-time').innerText = formatTime(cur);
           document.getElementById('duration-time').innerText = formatTime(dur);
           document.getElementById('full-duration-time').innerText = formatTime(dur);
+          updateLyricsHighlight(cur);
         }
       }, 250);
     }
@@ -2644,6 +2726,192 @@
 
     function toggleCompactMode() {
       document.body.classList.toggle('compact-mode');
+    }
+
+    // SPOTIFY LYRICS & KARAOKE ENGINE
+    let isLyricsViewOpen = false;
+    let currentTrackLyrics = null;
+    let currentActiveLyricIndex = -1;
+
+    async function toggleLyricsView() {
+      if (isLyricsViewOpen) {
+        closeLyricsView();
+      } else {
+        openLyricsView();
+      }
+    }
+
+    function openLyricsView() {
+      isLyricsViewOpen = true;
+      const modal = document.getElementById('lyrics-view-modal');
+      const btn = document.getElementById('lyrics-btn');
+      if (modal) {
+        modal.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100');
+      }
+      if (btn) {
+        btn.classList.add('text-spotify-green');
+      }
+      refreshIcons();
+
+      const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      if (track) {
+        loadLyricsForTrack(track);
+      }
+    }
+
+    function closeLyricsView() {
+      isLyricsViewOpen = false;
+      const modal = document.getElementById('lyrics-view-modal');
+      const btn = document.getElementById('lyrics-btn');
+      if (modal) {
+        modal.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+        modal.classList.remove('opacity-100');
+      }
+      if (btn) {
+        btn.classList.remove('text-spotify-green');
+      }
+    }
+
+    const LYRICS_PALETTES = [
+      'from-[#4a121a] via-[#24080d] to-[#121212]', // wine red / burgundy (like screenshot)
+      'from-[#122e4a] via-[#081524] to-[#121212]', // deep navy
+      'from-[#2e124a] via-[#140824] to-[#121212]', // deep purple
+      'from-[#124a2e] via-[#082415] to-[#121212]', // dark emerald
+      'from-[#4a3412] via-[#241a08] to-[#121212]', // amber brown
+      'from-[#4a1236] via-[#24081b] to-[#121212]'  // plum magenta
+    ];
+
+    function getGradientForTrack(title = '') {
+      let hash = 0;
+      for (let i = 0; i < title.length; i++) hash += title.charCodeAt(i);
+      return LYRICS_PALETTES[hash % LYRICS_PALETTES.length];
+    }
+
+    async function loadLyricsForTrack(track) {
+      if (!track || !track.title) return;
+      const songTitleEl = document.getElementById('lyrics-header-song');
+      if (songTitleEl) songTitleEl.innerText = `${track.title} • ${track.artist}`;
+
+      const gradEl = document.getElementById('lyrics-bg-gradient');
+      if (gradEl) {
+        gradEl.className = `absolute inset-0 bg-gradient-to-b ${getGradientForTrack(track.title)} -z-10 transition-all duration-700`;
+      }
+
+      // If already cached for this exact track, display immediately
+      if (currentTrackLyrics && currentTrackLyrics.trackTitle === track.title) {
+        renderLyricsContent(currentTrackLyrics);
+        return;
+      }
+
+      document.getElementById('lyrics-loading').classList.remove('hidden');
+      document.getElementById('lyrics-lines-box').innerHTML = '';
+      currentActiveLyricIndex = -1;
+
+      try {
+        const url = `/api/lyrics?title=${encodeURIComponent(track.title)}&artist=${encodeURIComponent(track.artist || '')}&videoId=${encodeURIComponent(track.id || '')}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById('lyrics-loading').classList.add('hidden');
+
+        if (data.success && data.lines && data.lines.length > 0) {
+          currentTrackLyrics = {
+            trackTitle: track.title,
+            synced: data.synced,
+            lines: data.lines
+          };
+          renderLyricsContent(currentTrackLyrics);
+        } else {
+          document.getElementById('lyrics-lines-box').innerHTML = `
+            <div class="py-24 text-center">
+              <i data-lucide="music" class="w-16 h-16 mx-auto mb-4 text-white/20"></i>
+              <p class="text-2xl font-bold text-white">Paroles non disponibles</p>
+              <p class="text-sm text-white/50 mt-2">Nous n'avons pas encore les paroles de ce titre.</p>
+            </div>
+          `;
+          refreshIcons();
+        }
+      } catch (e) {
+        document.getElementById('lyrics-loading').classList.add('hidden');
+        document.getElementById('lyrics-lines-box').innerHTML = `
+          <div class="py-24 text-center">
+            <p class="text-lg font-semibold text-white/60">Impossible de charger les paroles</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderLyricsContent(lyricsData) {
+      const box = document.getElementById('lyrics-lines-box');
+      const badge = document.getElementById('lyrics-sync-badge');
+      if (!box) return;
+
+      if (lyricsData.synced) {
+        if (badge) badge.classList.remove('hidden');
+      } else {
+        if (badge) badge.classList.add('hidden');
+      }
+
+      box.innerHTML = lyricsData.lines.map((l, idx) => {
+        return `
+          <p id="lyric-line-${idx}" 
+             data-time="${l.time}" 
+             onclick="${lyricsData.synced ? `seekToLyric(${l.time})` : ''}" 
+             class="lyric-line text-2xl sm:text-4xl md:text-5xl font-black ${lyricsData.synced ? 'is-upcoming cursor-pointer' : 'text-white/80'}">
+            ${l.text || '...'}
+          </p>
+        `;
+      }).join('');
+
+      if (ytPlayer && ytPlayer.getCurrentTime) {
+        try {
+          updateLyricsHighlight(ytPlayer.getCurrentTime());
+        } catch(e) {}
+      }
+    }
+
+    function seekToLyric(time) {
+      if (time >= 0) {
+        seekTo(time);
+      }
+    }
+
+    function updateLyricsHighlight(currentTime) {
+      if (!isLyricsViewOpen || !currentTrackLyrics || !currentTrackLyrics.synced || !currentTrackLyrics.lines) return;
+
+      const lines = currentTrackLyrics.lines;
+      let activeIndex = -1;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (currentTime >= lines[i].time) {
+          activeIndex = i;
+        } else {
+          break;
+        }
+      }
+
+      if (activeIndex !== currentActiveLyricIndex) {
+        currentActiveLyricIndex = activeIndex;
+
+        lines.forEach((l, idx) => {
+          const el = document.getElementById(`lyric-line-${idx}`);
+          if (!el) return;
+          if (idx === activeIndex) {
+            el.className = 'lyric-line text-2xl sm:text-4xl md:text-5xl font-black is-active';
+          } else if (idx < activeIndex) {
+            el.className = 'lyric-line text-2xl sm:text-4xl md:text-5xl font-black is-passed';
+          } else {
+            el.className = 'lyric-line text-2xl sm:text-4xl md:text-5xl font-black is-upcoming';
+          }
+        });
+
+        if (activeIndex >= 0) {
+          const activeEl = document.getElementById(`lyric-line-${activeIndex}`);
+          if (activeEl) {
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
     }
 
     // SPOTIWAVE CONNECT MODAL & ACTIONS

@@ -33,6 +33,7 @@ stream_cache: Dict[str, Dict] = {}
 feed_cache: Dict[str, Dict] = {}
 artist_cache: Dict[str, Dict] = {}
 album_cache: Dict[str, Dict] = {}
+lyrics_cache: Dict[str, Dict] = {}
 
 class Room:
     def __init__(self, room_id: str):
@@ -562,6 +563,67 @@ async def get_album_details(browseId: str = Query(...)):
         return JSONResponse(content={"success": True, "album": album_obj})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/lyrics")
+async def get_track_lyrics(title: str = Query(...), artist: str = Query(""), videoId: Optional[str] = None):
+    now = time.time()
+    cache_key = f"{title.strip().lower()}_{artist.strip().lower()}"
+    if cache_key in lyrics_cache and (now - lyrics_cache[cache_key]["time"]) < 86400:
+        return JSONResponse(content=lyrics_cache[cache_key]["data"])
+
+    clean_t = re.sub(r'\(feat\..*?\)', '', title, flags=re.I)
+    clean_t = re.sub(r'\[feat\..*?\]', '', clean_t, flags=re.I)
+    clean_t = re.sub(r'\(with.*?\)', '', clean_t, flags=re.I)
+    clean_t = re.sub(r'[-–]\s*Remaster.*', '', clean_t, flags=re.I)
+    clean_t = re.sub(r'\(Remaster.*?\)', '', clean_t, flags=re.I)
+    clean_t = re.sub(r'\s+', ' ', clean_t).strip()
+    clean_a = artist.split(',')[0].strip()
+
+    # 1. First attempt: LRCLIB for line-by-line synchronized lyrics
+    try:
+        q_params = urllib.parse.urlencode({'track_name': clean_t, 'artist_name': clean_a})
+        lrclib_url = f'https://lrclib.net/api/get?{q_params}'
+        req = urllib.request.Request(lrclib_url, headers={'User-Agent': 'SpotiWave (https://github.com)'})
+        with urllib.request.urlopen(req, timeout=3.5) as resp:
+            data = json.loads(resp.read().decode())
+            if data.get('syncedLyrics'):
+                lines = []
+                for line in data['syncedLyrics'].splitlines():
+                    m = re.match(r'\[(\d+):(\d+(?:\.\d+)?)\](.*)', line)
+                    if m:
+                        mins = int(m.group(1))
+                        secs = float(m.group(2))
+                        lines.append({'time': round(mins * 60 + secs, 2), 'text': m.group(3).strip()})
+                if lines:
+                    payload = {'success': True, 'synced': True, 'lines': lines}
+                    lyrics_cache[cache_key] = {'data': payload, 'time': now}
+                    return JSONResponse(content=payload)
+            elif data.get('plainLyrics'):
+                lines = [{'time': -1, 'text': l.strip()} for l in data['plainLyrics'].splitlines() if l.strip()]
+                if lines:
+                    payload = {'success': True, 'synced': False, 'lines': lines}
+                    lyrics_cache[cache_key] = {'data': payload, 'time': now}
+                    return JSONResponse(content=payload)
+    except Exception:
+        pass
+
+    # 2. Fallback: YouTube Music lyrics
+    if videoId:
+        try:
+            watch = ytm.get_watch_playlist(videoId=videoId)
+            lyr_id = watch.get('lyrics')
+            if lyr_id:
+                lyr_data = ytm.get_lyrics(lyr_id)
+                raw = lyr_data.get('lyrics', '')
+                lines = [{'time': -1, 'text': l.strip()} for l in raw.splitlines() if l.strip()]
+                if lines:
+                    payload = {'success': True, 'synced': False, 'lines': lines}
+                    lyrics_cache[cache_key] = {'data': payload, 'time': now}
+                    return JSONResponse(content=payload)
+        except Exception:
+            pass
+
+    return JSONResponse(content={'success': False, 'error': 'Paroles non disponibles pour ce titre'})
 
 def extract_audio_url(video_id: str) -> Optional[str]:
     # 1. First try public high-speed Invidious API (bypasses datacenter bot blocks)
