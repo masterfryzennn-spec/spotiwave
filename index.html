@@ -95,6 +95,60 @@
       background: #181818 !important;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
     }
+
+    /* Spotify Equalizer Bars Animation */
+    .equalizer-bars {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+      width: 14px;
+    }
+    .equalizer-bars span {
+      width: 2.5px;
+      background-color: #1ed760;
+      border-radius: 1px;
+      height: 30%;
+    }
+    .equalizer-bars.playing span:nth-child(1) {
+      animation: eq-bounce 0.8s ease-in-out infinite alternate;
+    }
+    .equalizer-bars.playing span:nth-child(2) {
+      animation: eq-bounce 1.2s ease-in-out infinite alternate 0.2s;
+    }
+    .equalizer-bars.playing span:nth-child(3) {
+      animation: eq-bounce 0.9s ease-in-out infinite alternate 0.4s;
+    }
+    .equalizer-bars.playing span:nth-child(4) {
+      animation: eq-bounce 1.1s ease-in-out infinite alternate 0.1s;
+    }
+    .equalizer-bars.paused span {
+      animation: none !important;
+      height: 30% !important;
+    }
+    @keyframes eq-bounce {
+      0% { height: 20%; }
+      100% { height: 100%; }
+    }
+
+    .track-row {
+      transition: background-color 0.15s ease;
+    }
+    .track-row:hover .row-index {
+      display: none !important;
+    }
+    .track-row:hover .row-play-btn {
+      display: flex !important;
+    }
+    .track-row.is-active .row-index {
+      display: none !important;
+    }
+    .track-row.is-active .equalizer-bars {
+      display: inline-flex !important;
+    }
+    .track-row.is-active .track-title {
+      color: #1ed760 !important;
+    }
   </style>
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
@@ -220,48 +274,69 @@
         
         <!-- PLAYLIST DETAIL VIEW (Hidden by default, shown when viewing a playlist) -->
         <section id="playlist-detail-section" class="hidden space-y-6">
-          <div class="flex flex-col sm:flex-row items-center sm:items-end gap-6 bg-gradient-to-t from-zinc-900 to-zinc-800/60 p-6 rounded-2xl border border-white/5 shadow-2xl">
-            <img id="detail-playlist-cover" src="" class="w-44 h-44 rounded-xl object-cover shadow-2xl border border-white/10 flex-shrink-0" alt="Cover">
+          <div class="flex flex-col sm:flex-row items-center sm:items-end gap-6 bg-gradient-to-b from-zinc-800/80 via-zinc-900/60 to-transparent p-6 sm:p-8 rounded-2xl border border-white/5">
+            <img id="detail-playlist-cover" src="" class="w-44 h-44 sm:w-52 sm:h-52 rounded-md object-cover shadow-[0_12px_36px_rgba(0,0,0,0.7)] flex-shrink-0 border border-white/10" alt="Cover">
             <div class="flex-1 text-center sm:text-left space-y-2">
-              <span id="detail-playlist-badge" class="text-xs uppercase font-extrabold tracking-widest text-spotify-green">Playlist</span>
-              <h1 id="detail-playlist-title" class="text-2xl sm:text-4xl font-black text-white tracking-tight">Titre</h1>
-              <p id="detail-playlist-meta" class="text-xs sm:text-sm text-spotify-subtext">0 titre</p>
-              
-              <div class="flex items-center justify-center sm:justify-start gap-3 pt-2">
-                <button onclick="playCurrentPlaylistView(false)" class="px-6 py-2.5 rounded-full bg-spotify-green hover:bg-spotify-hover text-black font-extrabold flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer">
-                  <svg class="w-5 h-5 fill-black" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-                  <span>Écouter</span>
-                </button>
-                <button onclick="playCurrentPlaylistView(true)" class="p-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition hover:scale-105 active:scale-95 cursor-pointer" title="Lecture aléatoire">
-                  <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
-                    <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
-                  </svg>
-                </button>
-                <button onclick="refreshCurrentPlaylistCovers()" id="refresh-covers-btn" class="px-3.5 py-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer shadow-md" title="Mettre à jour les pochettes de chaque chanson">
-                  <i data-lucide="image" class="w-4 h-4 text-spotify-green"></i>
-                  <span>Pochettes</span>
-                </button>
-                <button onclick="deleteCurrentPlaylistView()" id="delete-playlist-btn" class="p-2.5 rounded-full bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition cursor-pointer" title="Supprimer la playlist">
-                  <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
+              <span id="detail-playlist-badge" class="text-xs uppercase font-extrabold tracking-widest text-zinc-300">Playlist</span>
+              <h1 id="detail-playlist-title" class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">Titre</h1>
+              <div class="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-zinc-400 font-medium pt-1">
+                <span class="font-bold text-white">SpotiWave</span>
+                <span>•</span>
+                <span id="detail-playlist-meta">0 morceau</span>
               </div>
             </div>
           </div>
 
+          <!-- ACTION BAR -->
+          <div class="flex items-center gap-4 px-2">
+            <button onclick="playCurrentPlaylistView(false)" id="playlist-main-play-btn" class="w-14 h-14 rounded-full bg-spotify-green hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-2xl transition cursor-pointer" title="Écouter">
+              <svg class="w-6 h-6 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </button>
+            <button onclick="playCurrentPlaylistView(true)" class="p-3 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition cursor-pointer hover:scale-110 active:scale-95" title="Lecture aléatoire">
+              <svg class="w-6 h-6 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
+              </svg>
+            </button>
+            <button onclick="refreshCurrentPlaylistCovers()" id="refresh-covers-btn" class="px-4 py-2 rounded-full border border-white/20 hover:border-white text-xs font-bold text-zinc-300 hover:text-white transition flex items-center gap-2 cursor-pointer shadow-sm" title="Mettre à jour les pochettes de chaque chanson">
+              <i data-lucide="image" class="w-4 h-4 text-spotify-green"></i>
+              <span>Pochettes HD</span>
+            </button>
+            <button onclick="deleteCurrentPlaylistView()" id="delete-playlist-btn" class="p-3 rounded-full hover:bg-white/10 text-zinc-400 hover:text-red-400 transition cursor-pointer" title="Supprimer la playlist">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </div>
+
           <!-- TRACKS TABLE -->
-          <div class="bg-zinc-900/50 rounded-xl border border-white/5 overflow-hidden">
-            <div id="playlist-tracks-container" class="divide-y divide-white/5"></div>
+          <div class="rounded-xl overflow-hidden">
+            <div id="playlist-tracks-container"></div>
           </div>
         </section>
 
         <!-- SEARCH RESULTS SECTION -->
-        <section id="search-results-section" class="hidden">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">Résultats en direct</h2>
-            <button onclick="clearSearch()" class="text-xs text-spotify-subtext hover:text-white">Effacer</button>
+        <section id="search-results-section" class="hidden space-y-8">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight text-white">Résultats de recherche</h2>
+            <button onclick="clearSearch()" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer">Effacer</button>
           </div>
-          <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+
+          <!-- Top Result & Top 4 Songs Split Layout -->
+          <div id="search-top-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 flex flex-col">
+              <h3 class="text-xl font-bold mb-3 text-white">Meilleur résultat</h3>
+              <div id="search-top-result" class="flex-1 bg-[#181818] hover:bg-[#282828] p-5 rounded-xl transition-all duration-300 relative group cursor-pointer border border-white/5 shadow-xl flex flex-col justify-between"></div>
+            </div>
+            <div class="lg:col-span-7 flex flex-col">
+              <h3 class="text-xl font-bold mb-3 text-white">Titres</h3>
+              <div id="search-top-tracks" class="space-y-1"></div>
+            </div>
+          </div>
+
+          <!-- Remaining Results in Grid -->
+          <div id="search-more-container">
+            <h3 class="text-xl font-bold mb-4 text-white">Autres titres</h3>
+            <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+          </div>
         </section>
 
         <!-- WELCOME SECTION -->
@@ -887,43 +962,56 @@
       if (!liveFeedData) return;
 
       const quickPicks = [...(liveFeedData.trending || []), ...(liveFeedData.top50 || [])].slice(0, 6);
-      document.getElementById('quick-picks-grid').innerHTML = quickPicks.map((t) => `
-        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/60 transition rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
-          <img src="${t.cover}" class="w-14 h-14 object-cover flex-shrink-0" alt="${t.title}" loading="lazy">
-          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-1">${t.title}</span>
-          <div class="w-8 h-8 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition shadow-lg flex-shrink-0">
+      document.getElementById('quick-picks-grid').innerHTML = quickPicks.map((t) => {
+        const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+        return `
+        <div onclick="playRealTrack(${encoded})" class="group flex items-center bg-zinc-800/50 hover:bg-zinc-700/60 transition-colors duration-200 rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
+          <img src="${t.cover}" class="w-14 h-14 md:w-16 md:h-16 object-cover flex-shrink-0 shadow-md" alt="${t.title}" loading="lazy">
+          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-2">${t.title}</span>
+          <div class="w-9 h-9 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex-shrink-0">
             <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       renderTrackGrid('trending-tracks-grid', liveFeedData.trending || []);
       renderTrackGrid('top50-tracks-grid', liveFeedData.top50 || []);
       renderTrackGrid('rap-tracks-grid', liveFeedData.rap || []);
       renderTrackGrid('electro-tracks-grid', liveFeedData.electro || []);
 
-      lucide.createIcons();
+      refreshIcons();
     }
 
     function renderTrackGrid(containerId, tracks) {
       const container = document.getElementById(containerId);
       if (!container) return;
-      container.innerHTML = tracks.map((t) => `
-        <div onclick="playRealTrack(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="group bg-spotify-card hover:bg-spotify-cardHover p-3 rounded-lg transition cursor-pointer flex flex-col border border-white/5 relative">
-          <div class="relative w-full aspect-square mb-3 rounded-md overflow-hidden shadow-lg bg-zinc-900">
-            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${t.title}" loading="lazy">
-            <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300">
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+
+      container.innerHTML = tracks.map((t) => {
+        const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
+        const isLiked = isTrackLiked(t);
+        const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+        return `
+        <div onclick="playRealTrack(${encoded})" class="group bg-[#181818] hover:bg-[#282828] p-3.5 rounded-lg transition-all duration-300 cursor-pointer flex flex-col relative shadow-md hover:shadow-2xl border border-white/5">
+          <div class="relative w-full aspect-square mb-3.5 rounded-md overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
+            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
+            <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300">
               <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
             </div>
-            <!-- Plus button to add to playlist -->
-            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" title="Ajouter à une playlist" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-spotify-green hover:text-black text-white flex items-center justify-center backdrop-blur transition opacity-0 group-hover:opacity-100">
-              <svg class="w-4 h-4 fill-none stroke-current" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all ${isLiked ? '!opacity-100 text-spotify-green' : 'opacity-0 group-hover:opacity-100'}">
+              <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
+            </button>
+            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all opacity-0 group-hover:opacity-100 hover:text-spotify-green">
+              <i data-lucide="plus" class="w-4 h-4"></i>
             </button>
           </div>
-          <h3 class="text-sm font-bold text-white line-clamp-1">${t.title}</h3>
-          <p class="text-xs text-spotify-subtext line-clamp-1 mt-1">${t.artist}</p>
+          <h3 class="text-sm md:text-base font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
+          <p class="text-xs text-zinc-400 line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     // PLAYLIST MANAGEMENT
@@ -964,6 +1052,20 @@
       lucide.createIcons();
     }
 
+    function formatPlaylistDuration(tracks) {
+      if (!tracks || tracks.length === 0) return "0 titre";
+      let totalSecs = 0;
+      tracks.forEach(t => {
+        totalSecs += parseDurationSeconds(t.duration || "3:30");
+      });
+      const hrs = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      if (hrs > 0) {
+        return `${tracks.length} titre${tracks.length > 1 ? 's' : ''} • environ ${hrs} h ${mins} min`;
+      }
+      return `${tracks.length} titre${tracks.length > 1 ? 's' : ''} • ${mins} min`;
+    }
+
     function viewLikedSongsPlaylist() {
       activeViewingPlaylistId = 'liked';
       renderPlaylistsSidebar();
@@ -980,7 +1082,7 @@
       document.getElementById('detail-playlist-title').innerText = "Titres Likés";
       document.getElementById('detail-playlist-badge').innerText = "Ma Collection";
       document.getElementById('detail-playlist-cover').src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop";
-      document.getElementById('detail-playlist-meta').innerText = `${likedTracks.length} titres sauvegardés`;
+      document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(likedTracks);
       document.getElementById('delete-playlist-btn').classList.add('hidden');
 
       renderPlaylistTracksTable(likedTracks, true);
@@ -1006,7 +1108,7 @@
       document.getElementById('detail-playlist-title').innerText = pl.title;
       document.getElementById('detail-playlist-badge').innerText = pl.type === 'spotify' ? "Importé de Spotify" : "Playlist Personnelle";
       document.getElementById('detail-playlist-cover').src = pl.cover || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop";
-      document.getElementById('detail-playlist-meta').innerText = `${pl.tracks ? pl.tracks.length : 0} morceaux`;
+      document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(pl.tracks || []);
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
 
       renderPlaylistTracksTable(pl.tracks || [], false);
@@ -1054,7 +1156,7 @@
               if (activeViewingPlaylistId === targetPlId) {
                 const container = document.getElementById('playlist-tracks-container');
                 if (container) {
-                  const rows = container.querySelectorAll('.group');
+                  const rows = container.querySelectorAll('.track-row');
                   if (rows[item.index]) {
                     const img = rows[item.index].querySelector('img');
                     if (img) img.src = data.track.cover;
@@ -1073,28 +1175,86 @@
     function renderPlaylistTracksTable(tracks, isLikedView) {
       const container = document.getElementById('playlist-tracks-container');
       if (!tracks || tracks.length === 0) {
-        container.innerHTML = `<p class="p-8 text-center text-zinc-500 text-sm">Aucun morceau dans cette playlist pour le moment.</p>`;
+        container.innerHTML = `
+          <div class="py-16 text-center text-zinc-500">
+            <i data-lucide="music" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+            <p class="text-base font-semibold text-zinc-400">Aucun morceau dans cette playlist</p>
+            <p class="text-xs text-zinc-600 mt-1">Recherchez des morceaux ou importez une playlist Spotify</p>
+          </div>
+        `;
+        refreshIcons();
         return;
       }
 
-      container.innerHTML = tracks.map((t, idx) => `
-        <div onclick="playTrackFromPlaylist(${idx})" class="group flex items-center justify-between p-3 hover:bg-white/10 transition cursor-pointer">
-          <div class="flex items-center gap-3 flex-1 overflow-hidden">
-            <span class="w-6 text-center text-xs font-mono text-zinc-500 group-hover:text-spotify-green">${idx + 1}</span>
-            <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded object-cover flex-shrink-0" alt="Cover">
-            <div class="overflow-hidden">
-              <p class="text-sm font-semibold text-white line-clamp-1">${t.title}</p>
-              <p class="text-xs text-zinc-400 line-clamp-1">${t.artist}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-4 text-xs font-mono text-zinc-400">
-            <span>${formatDuration(t.duration)}</span>
-            <button onclick="event.stopPropagation(); removeTrackFromCurrentPlaylist(${idx}, ${isLikedView})" class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 cursor-pointer" title="Retirer">
-              ✕
-            </button>
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+
+      const headerHTML = `
+        <div class="grid grid-cols-[36px_1fr_auto] md:grid-cols-[36px_5fr_3fr_minmax(100px,1fr)] gap-4 px-4 py-2.5 border-b border-white/10 text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 select-none">
+          <span class="text-center">#</span>
+          <span>Titre</span>
+          <span class="hidden md:block">Artiste</span>
+          <div class="flex justify-end pr-8 items-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
         </div>
-      `).join('');
+      `;
+
+      const rowsHTML = tracks.map((t, idx) => {
+        const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
+        const isThisPlaying = isCurrent && isPlaying;
+        const isLiked = isTrackLiked(t);
+        const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+        const fallbackCover = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop';
+        const coverUrl = t.cover || fallbackCover;
+
+        return `
+          <div onclick="playTrackFromPlaylist(${idx})" class="track-row group grid grid-cols-[36px_1fr_auto] md:grid-cols-[36px_5fr_3fr_minmax(100px,1fr)] gap-4 items-center px-4 py-2 hover:bg-white/10 rounded-md transition duration-150 cursor-pointer select-none ${isCurrent ? 'is-active bg-white/5' : ''}">
+            <!-- Col 1: Index / Play Icon / Equalizer -->
+            <div class="flex items-center justify-center">
+              <span class="row-index text-sm font-mono ${isCurrent ? 'hidden' : 'text-zinc-400'} group-hover:hidden">${idx + 1}</span>
+              <button class="row-play-btn hidden group-hover:flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </button>
+              <div class="equalizer-bars ${isCurrent ? (isThisPlaying ? 'playing' : 'paused') : 'hidden'}">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <!-- Col 2: Thumbnail, Title, and Artist (mobile) -->
+            <div class="flex items-center gap-3.5 min-w-0 overflow-hidden">
+              <img src="${coverUrl}" class="w-10 h-10 rounded object-cover flex-shrink-0 shadow border border-white/5" alt="Cover" loading="lazy">
+              <div class="truncate">
+                <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
+                <p class="text-xs text-zinc-400 truncate md:hidden hover:text-white">${t.artist}</p>
+              </div>
+            </div>
+
+            <!-- Col 3: Artist (Desktop) -->
+            <div class="hidden md:block truncate text-sm text-zinc-400 hover:text-white">
+              <span>${t.artist}</span>
+            </div>
+
+            <!-- Col 4: Actions & Duration -->
+            <div class="flex items-center justify-end gap-3 text-xs text-zinc-400 font-mono">
+              <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" class="p-1 rounded-full hover:scale-110 transition cursor-pointer ${isLiked ? 'text-spotify-green opacity-100' : 'text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-white'}" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green' : ''}"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" class="p-1 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition cursor-pointer opacity-0 group-hover:opacity-100" title="Ajouter à une playlist">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+              <span class="w-12 text-right">${formatDuration(t.duration)}</span>
+              ${!isLikedView ? `
+              <button onclick="event.stopPropagation(); removeTrackFromCurrentPlaylist(${idx}, ${isLikedView})" class="p-1 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition cursor-pointer ml-1" title="Retirer">
+                ✕
+              </button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = headerHTML + `<div class="space-y-0.5">${rowsHTML}</div>`;
+      refreshIcons();
     }
 
     async function playTrackFromPlaylist(idx) {
@@ -1314,6 +1474,11 @@
       }, 350);
     }
 
+    function playTrackFromSearch(tracks, index) {
+      currentPlaylist = [...tracks];
+      loadTrack(index, true);
+    }
+
     function renderSearchResults(tracks) {
       document.getElementById('playlist-detail-section').classList.add('hidden');
       document.getElementById('search-results-section').classList.remove('hidden');
@@ -1324,8 +1489,105 @@
       document.getElementById('section-rap').classList.add('hidden');
       document.getElementById('section-electro').classList.add('hidden');
 
-      renderTrackGrid('search-results-grid', tracks);
-      lucide.createIcons();
+      if (!tracks || tracks.length === 0) {
+        document.getElementById('search-top-container').classList.add('hidden');
+        document.getElementById('search-more-container').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('search-top-container').classList.remove('hidden');
+
+      // 1. TOP RESULT CARD (Spotify Desktop Style)
+      const topTrack = tracks[0];
+      const isTopLiked = isTrackLiked(topTrack);
+      const topEncoded = JSON.stringify(topTrack).replace(/"/g, '&quot;');
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+      const isCurrentTop = currentTitle && (topTrack.title || '').trim().toLowerCase() === currentTitle;
+
+      const topResultEl = document.getElementById('search-top-result');
+      if (topResultEl) {
+        topResultEl.onclick = () => playTrackFromSearch(tracks, 0);
+        topResultEl.innerHTML = `
+          <div>
+            <div class="relative w-28 h-28 sm:w-32 sm:h-32 mb-4 rounded-lg overflow-hidden shadow-2xl bg-zinc-900 border border-white/10">
+              <img src="${topTrack.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${topTrack.title}">
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black ${isCurrentTop ? 'text-spotify-green' : 'text-white'} group-hover:underline line-clamp-1 mb-2">${topTrack.title}</h2>
+            <div class="flex items-center gap-2 text-sm text-zinc-400">
+              <span class="font-medium text-white">${topTrack.artist}</span>
+              <span>•</span>
+              <span class="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white/10 text-white tracking-wider">Titre</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-6">
+            <div class="flex items-center gap-2">
+              <button onclick="event.stopPropagation(); toggleLikeTrack(${topEncoded})" class="p-2 rounded-full hover:scale-110 transition cursor-pointer ${isTopLiked ? 'text-spotify-green' : 'text-zinc-400 hover:text-white'}" title="${isTopLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                <i data-lucide="heart" class="w-5 h-5 ${isTopLiked ? 'fill-spotify-green' : ''}"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openAddToPlaylistModal(${topEncoded})" class="p-2 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition cursor-pointer" title="Ajouter à une playlist">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl group-hover:scale-105 active:scale-95 transition-all duration-200">
+              <svg class="w-6 h-6 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. TOP 4 TRACKS LIST (Spotify Side List)
+      const topTracksEl = document.getElementById('search-top-tracks');
+      if (topTracksEl) {
+        const top4 = tracks.slice(0, 4);
+        topTracksEl.innerHTML = top4.map((t, idx) => {
+          const isCurrent = currentTitle && (t.title || '').trim().toLowerCase() === currentTitle;
+          const isThisPlaying = isCurrent && isPlaying;
+          const isLiked = isTrackLiked(t);
+          const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+          return `
+            <div onclick="playTrackFromSearch(tracks, ${idx})" class="track-row group flex items-center justify-between p-2 rounded-lg hover:bg-white/10 transition duration-150 cursor-pointer ${isCurrent ? 'is-active bg-white/5' : ''}">
+              <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                <div class="relative w-11 h-11 flex-shrink-0 rounded overflow-hidden shadow">
+                  <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-full h-full object-cover" alt="${t.title}" loading="lazy">
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <svg class="w-5 h-5 fill-white ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                  </div>
+                </div>
+                <div class="truncate pr-2">
+                  <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
+                  <p class="text-xs text-zinc-400 truncate hover:text-white">${t.artist}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-zinc-400 font-mono flex-shrink-0">
+                <div class="equalizer-bars ${isCurrent ? (isThisPlaying ? 'playing' : 'paused') : 'hidden'} mr-1">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" class="p-1 rounded-full hover:scale-110 transition cursor-pointer ${isLiked ? 'text-spotify-green opacity-100' : 'text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-white'}" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                  <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green' : ''}"></i>
+                </button>
+                <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" class="p-1 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition cursor-pointer opacity-0 group-hover:opacity-100" title="Ajouter à une playlist">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+                <span class="w-10 text-right">${formatDuration(t.duration)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 3. MORE TRACKS (Grid below)
+      const moreContainer = document.getElementById('search-more-container');
+      const moreTracks = tracks.slice(4);
+      if (moreTracks.length > 0) {
+        if (moreContainer) moreContainer.classList.remove('hidden');
+        renderTrackGrid('search-results-grid', moreTracks);
+      } else {
+        if (moreContainer) moreContainer.classList.add('hidden');
+      }
+
+      refreshIcons();
+      updatePlayingTrackIndicators();
     }
 
     function clearSearch() {
@@ -1522,6 +1784,73 @@
       }
     }
 
+    function updatePlayingTrackIndicators() {
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+
+      // 1. Update playlist table & search top tracks rows
+      document.querySelectorAll('.track-row').forEach(row => {
+        const titleEl = row.querySelector('.track-title');
+        const rowIndexEl = row.querySelector('.row-index');
+        const eqEl = row.querySelector('.equalizer-bars');
+        if (!titleEl) return;
+
+        const rowTitle = (titleEl.getAttribute('data-title') || titleEl.innerText || '').trim().toLowerCase();
+        const isMatch = currentTitle && rowTitle === currentTitle;
+
+        if (isMatch) {
+          row.classList.add('is-active', 'bg-white/5');
+          titleEl.classList.add('text-spotify-green', 'font-bold');
+          titleEl.classList.remove('text-white');
+          if (rowIndexEl) rowIndexEl.classList.add('hidden');
+          if (eqEl) {
+            eqEl.classList.remove('hidden');
+            if (isPlaying) {
+              eqEl.classList.add('playing');
+              eqEl.classList.remove('paused');
+            } else {
+              eqEl.classList.add('paused');
+              eqEl.classList.remove('playing');
+            }
+          }
+        } else {
+          row.classList.remove('is-active', 'bg-white/5');
+          titleEl.classList.remove('text-spotify-green', 'font-bold');
+          titleEl.classList.add('text-white');
+          if (rowIndexEl) rowIndexEl.classList.remove('hidden');
+          if (eqEl) {
+            eqEl.classList.add('hidden');
+            eqEl.classList.remove('playing', 'paused');
+          }
+        }
+      });
+
+      // 2. Update home grid cards and search grid cards
+      document.querySelectorAll('#trending-tracks-grid h3, #top50-tracks-grid h3, #rap-tracks-grid h3, #electro-tracks-grid h3, #search-results-grid h3').forEach(h3 => {
+        const cardTitle = (h3.getAttribute('title') || h3.innerText || '').trim().toLowerCase();
+        if (currentTitle && cardTitle === currentTitle) {
+          h3.classList.add('text-spotify-green');
+          h3.classList.remove('text-white');
+        } else {
+          h3.classList.remove('text-spotify-green');
+          h3.classList.add('text-white');
+        }
+      });
+
+      // 3. Update search top result title
+      const topResTitle = document.querySelector('#search-top-result h2');
+      if (topResTitle) {
+        const t = (topResTitle.innerText || '').trim().toLowerCase();
+        if (currentTitle && t === currentTitle) {
+          topResTitle.classList.add('text-spotify-green');
+          topResTitle.classList.remove('text-white');
+        } else {
+          topResTitle.classList.remove('text-spotify-green');
+          topResTitle.classList.add('text-white');
+        }
+      }
+    }
+
     function syncUIWithTrack(track) {
       const dur = formatDuration(track.duration);
       document.getElementById('player-title').innerText = track.title;
@@ -1537,6 +1866,7 @@
 
       updateLikeIcon();
       refreshIcons();
+      updatePlayingTrackIndicators();
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -1666,6 +1996,8 @@
       if (amISpeaker()) {
         sendWs('UPDATE_STATE', { isPlaying: playing });
       }
+
+      updatePlayingTrackIndicators();
     }
 
     function playNext() {
@@ -2334,39 +2666,79 @@
     }
 
     // LIKES
-    function toggleLikeCurrent() {
-      const track = currentPlaylist[currentTrackIndex];
-      if (!track) return;
-      const idx = likedTracks.findIndex(item => item.title === track.title && item.artist === track.artist);
+    function isTrackLiked(track) {
+      if (!track || !track.title) return false;
+      const t = (track.title || '').trim().toLowerCase();
+      const a = (track.artist || '').trim().toLowerCase();
+      return likedTracks.some(item => (item.title || '').trim().toLowerCase() === t && (item.artist || '').trim().toLowerCase() === a);
+    }
+
+    function toggleLikeTrack(track) {
+      if (!track || !track.title) return;
+      const t = (track.title || '').trim().toLowerCase();
+      const a = (track.artist || '').trim().toLowerCase();
+      const idx = likedTracks.findIndex(item => (item.title || '').trim().toLowerCase() === t && (item.artist || '').trim().toLowerCase() === a);
+
       if (idx > -1) {
         likedTracks.splice(idx, 1);
         showToast("Retiré des Titres Likés");
       } else {
-        likedTracks.push(track);
+        likedTracks.unshift({
+          title: track.title,
+          artist: track.artist || "Artiste inconnu",
+          cover: track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop',
+          id: track.id || '',
+          duration: track.duration || '3:30'
+        });
         showToast("Ajouté aux Titres Likés ! ❤️");
       }
+
       localStorage.setItem('spotiwave_likes', JSON.stringify(likedTracks));
       updateLikeIcon();
       renderPlaylistsSidebar();
+
+      if (activeViewingPlaylistId === 'liked') {
+        document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(likedTracks);
+        renderPlaylistTracksTable(likedTracks, true);
+      } else if (activeViewingPlaylistId) {
+        const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+        if (pl) renderPlaylistTracksTable(pl.tracks || [], false);
+      }
+
+      renderAllFeeds();
+      refreshIcons();
+    }
+
+    function toggleLikeCurrent() {
+      const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      if (!track) return;
+      toggleLikeTrack(track);
     }
 
     function updateLikeIcon() {
-      const track = currentPlaylist[currentTrackIndex];
+      const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
       if (!track) return;
-      const isLiked = likedTracks.some(item => item.title === track.title && item.artist === track.artist);
+      const isLiked = isTrackLiked(track);
       const btn = document.getElementById('like-btn');
       const fullIcon = document.getElementById('full-like-icon');
 
-      if (isLiked) {
-        btn.classList.add('text-spotify-green');
-        btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5 fill-spotify-green"></i>`;
-        fullIcon.classList.add('text-spotify-green', 'fill-spotify-green');
-      } else {
-        btn.classList.remove('text-spotify-green');
-        btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5"></i>`;
-        fullIcon.classList.remove('text-spotify-green', 'fill-spotify-green');
+      if (btn) {
+        if (isLiked) {
+          btn.classList.add('text-spotify-green');
+          btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5 fill-spotify-green"></i>`;
+        } else {
+          btn.classList.remove('text-spotify-green');
+          btn.innerHTML = `<i data-lucide="heart" class="w-5 h-5"></i>`;
+        }
       }
-      lucide.createIcons();
+      if (fullIcon) {
+        if (isLiked) {
+          fullIcon.classList.add('text-spotify-green', 'fill-spotify-green');
+        } else {
+          fullIcon.classList.remove('text-spotify-green', 'fill-spotify-green');
+        }
+      }
+      refreshIcons();
     }
 
     function updateGreeting() {
