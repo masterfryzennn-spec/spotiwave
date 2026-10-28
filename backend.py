@@ -354,6 +354,32 @@ async def resolve_track_query(q: str = Query(..., min_length=1), exclude: Option
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
+@app.get("/api/search")
+async def search_tracks(q: str = Query(..., min_length=1)):
+    try:
+        clean_q = clean_music_query(q)
+        results = ytm.search(clean_q, filter="songs") or []
+        if not results and clean_q != q:
+            results = ytm.search(q, filter="songs") or []
+
+        if len(results) < 5:
+            more = ytm.search(clean_q) or []
+            existing_ids = set([r.get("videoId") for r in results if r.get("videoId")])
+            for m in more:
+                if m.get("videoId") and m.get("videoId") not in existing_ids:
+                    results.append(m)
+                    existing_ids.add(m.get("videoId"))
+
+        tracks = []
+        for item in results[:25]:
+            t = format_track(item)
+            if t:
+                tracks.append(t)
+
+        return JSONResponse(content={"success": True, "count": len(tracks), "tracks": tracks})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
 def extract_audio_url(video_id: str) -> Optional[str]:
     # 1. First try public high-speed Invidious API (bypasses datacenter bot blocks)
     invidious_endpoints = [
