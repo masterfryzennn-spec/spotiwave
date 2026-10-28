@@ -313,6 +313,62 @@
           </div>
         </section>
 
+        <!-- ARTIST DETAIL VIEW (Spotify Official Artist Layout) -->
+        <section id="artist-detail-section" class="hidden space-y-8">
+          <!-- Artist Hero Banner -->
+          <div class="relative w-full h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-end p-6 sm:p-8 border border-white/5">
+            <div id="artist-hero-bg" class="absolute inset-0 bg-cover bg-center transition-all duration-700"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-black/40 to-transparent"></div>
+            
+            <div class="relative z-10 space-y-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-sky-400 bg-sky-500/10 border border-sky-400/20 px-2.5 py-1 rounded-full w-fit backdrop-blur-md">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>Artiste vérifié</span>
+              </div>
+              <h1 id="artist-hero-name" class="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tight drop-shadow-xl">Artiste</h1>
+              <p id="artist-hero-subs" class="text-xs sm:text-sm text-zinc-300 font-semibold drop-shadow"></p>
+            </div>
+          </div>
+
+          <!-- Action Bar (Play, Shuffle, Follow) -->
+          <div class="flex items-center gap-4">
+            <button onclick="playCurrentArtistView(false)" class="w-14 h-14 rounded-full bg-spotify-green hover:bg-spotify-hover text-black flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition cursor-pointer">
+              <svg class="w-6 h-6 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </button>
+            <button onclick="playCurrentArtistView(true)" class="p-3 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition hover:scale-105 active:scale-95 cursor-pointer" title="Lecture aléatoire">
+              <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
+              </svg>
+            </button>
+            <button id="artist-follow-btn" onclick="toggleFollowCurrentArtist()" class="px-5 py-2 rounded-full border border-zinc-500 hover:border-white text-xs font-extrabold uppercase tracking-wider text-white hover:scale-105 active:scale-95 transition cursor-pointer">
+              Suivre
+            </button>
+          </div>
+
+          <!-- Popular Tracks (Spotify Top 5 / Top 10 / All) -->
+          <div class="space-y-4">
+            <h2 class="text-2xl font-bold tracking-tight text-white">Titres populaires</h2>
+            <div id="artist-tracks-container" class="space-y-0.5"></div>
+            <button id="artist-more-tracks-btn" onclick="toggleArtistTracksExpand()" class="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-white px-4 py-2 hover:bg-white/5 rounded-md transition cursor-pointer">
+              Afficher plus
+            </button>
+          </div>
+
+          <!-- Discography / Albums & Singles -->
+          <div id="artist-discography-section" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-2xl font-bold tracking-tight text-white">Discographie</h2>
+              <div class="flex items-center gap-2">
+                <button onclick="filterArtistDisco('all')" id="disco-btn-all" class="px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition cursor-pointer">Tout</button>
+                <button onclick="filterArtistDisco('albums')" id="disco-btn-albums" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">Albums</button>
+                <button onclick="filterArtistDisco('singles')" id="disco-btn-singles" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">Singles</button>
+              </div>
+            </div>
+            <div id="artist-disco-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+          </div>
+        </section>
+
         <!-- SEARCH RESULTS SECTION -->
         <section id="search-results-section" class="hidden space-y-8">
           <div class="flex items-center justify-between">
@@ -330,6 +386,12 @@
               <h3 class="text-xl font-bold mb-3 text-white">Titres</h3>
               <div id="search-top-tracks" class="space-y-1"></div>
             </div>
+          </div>
+
+          <!-- Matching Artists in Search -->
+          <div id="search-artists-container" class="hidden">
+            <h3 class="text-xl font-bold mb-3 text-white">Artistes</h3>
+            <div id="search-artists-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
           </div>
 
           <!-- Remaining Results in Grid -->
@@ -399,7 +461,7 @@
       <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-12 h-12 rounded-md object-cover shadow-lg border border-white/5 flex-shrink-0" alt="Cover">
       <div class="overflow-hidden">
         <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Sélectionnez un titre</p>
-        <p id="player-artist" class="text-xs text-spotify-subtext line-clamp-1">SpotiWave HD</p>
+        <p id="player-artist" onclick="event.stopPropagation(); viewArtistByName(this.innerText)" class="text-xs text-spotify-subtext hover:text-white hover:underline cursor-pointer line-clamp-1">SpotiWave HD</p>
       </div>
       <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2 cursor-pointer">
         <i data-lucide="heart" class="w-5 h-5"></i>
@@ -516,7 +578,7 @@
 
     <div class="my-4">
       <h2 id="full-player-title" class="text-2xl font-black text-white line-clamp-1">Titre</h2>
-      <p id="full-player-artist" class="text-base text-spotify-subtext font-medium line-clamp-1 mt-0.5">Artiste</p>
+      <p id="full-player-artist" onclick="event.stopPropagation(); closeMobilePlayer(); viewArtistByName(this.innerText);" class="text-base text-spotify-subtext hover:text-white hover:underline cursor-pointer font-medium line-clamp-1 mt-0.5">Artiste</p>
     </div>
 
     <div class="space-y-1 mb-6">
@@ -1008,7 +1070,7 @@
             </button>
           </div>
           <h3 class="text-sm md:text-base font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
-          <p class="text-xs text-zinc-400 line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
+          <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 hover:text-white hover:underline cursor-pointer line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
         </div>
       `;
       }).join('');
@@ -1071,6 +1133,7 @@
       renderPlaylistsSidebar();
 
       document.getElementById('playlist-detail-section').classList.remove('hidden');
+      document.getElementById('artist-detail-section').classList.add('hidden');
       document.getElementById('home-default-section').classList.add('hidden');
       document.getElementById('category-pills-bar').classList.add('hidden');
       document.getElementById('section-trending').classList.add('hidden');
@@ -1097,6 +1160,7 @@
       if (!pl) return;
 
       document.getElementById('playlist-detail-section').classList.remove('hidden');
+      document.getElementById('artist-detail-section').classList.add('hidden');
       document.getElementById('home-default-section').classList.add('hidden');
       document.getElementById('category-pills-bar').classList.add('hidden');
       document.getElementById('section-trending').classList.add('hidden');
@@ -1226,13 +1290,13 @@
               <img src="${coverUrl}" class="w-10 h-10 rounded object-cover flex-shrink-0 shadow border border-white/5" alt="Cover" loading="lazy">
               <div class="truncate">
                 <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
-                <p class="text-xs text-zinc-400 truncate md:hidden hover:text-white">${t.artist}</p>
+                <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 truncate md:hidden hover:text-white hover:underline cursor-pointer">${t.artist}</p>
               </div>
             </div>
 
             <!-- Col 3: Artist (Desktop) -->
             <div class="hidden md:block truncate text-sm text-zinc-400 hover:text-white">
-              <span>${t.artist}</span>
+              <span onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="hover:underline cursor-pointer">${t.artist}</span>
             </div>
 
             <!-- Col 4: Actions & Duration -->
@@ -1465,8 +1529,8 @@
           const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
           const data = await res.json();
           spinner.classList.add('hidden');
-          if (data.success && data.tracks.length > 0) {
-            renderSearchResults(data.tracks);
+          if (data.success && ((data.tracks && data.tracks.length > 0) || (data.artists && data.artists.length > 0))) {
+            renderSearchResults(data.tracks || [], data.artists || []);
           }
         } catch (e) {
           spinner.classList.add('hidden');
@@ -1482,8 +1546,9 @@
       loadTrack(index, true);
     }
 
-    function renderSearchResults(tracks) {
+    function renderSearchResults(tracks, artists = []) {
       currentSearchResults = tracks || [];
+      document.getElementById('artist-detail-section').classList.add('hidden');
       document.getElementById('playlist-detail-section').classList.add('hidden');
       document.getElementById('search-results-section').classList.remove('hidden');
       document.getElementById('home-default-section').classList.add('hidden');
@@ -1493,15 +1558,42 @@
       document.getElementById('section-rap').classList.add('hidden');
       document.getElementById('section-electro').classList.add('hidden');
 
+      // 1. ARTISTS IN SEARCH (Spotify Circle Cards)
+      const artistsContainer = document.getElementById('search-artists-container');
+      const artistsGrid = document.getElementById('search-artists-grid');
+      if (artists && artists.length > 0 && artistsContainer && artistsGrid) {
+        artistsContainer.classList.remove('hidden');
+        artistsGrid.innerHTML = artists.map(a => {
+          const safeName = (a.name || '').replace(/'/g, "\\'");
+          return `
+            <div onclick="viewArtistByBrowseId('${a.browseId}', '${safeName}')" class="group bg-[#181818] hover:bg-[#282828] p-4 rounded-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center shadow-md hover:shadow-2xl border border-white/5 relative">
+              <div class="relative w-24 h-24 sm:w-28 sm:h-28 mb-3.5 rounded-full overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.6)] bg-zinc-900 border border-white/10">
+                <img src="${a.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${a.name}">
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <div class="w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl">
+                    <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                  </div>
+                </div>
+              </div>
+              <h4 class="text-sm font-bold text-white truncate max-w-full group-hover:underline" title="${a.name}">${a.name}</h4>
+              <span class="text-xs text-zinc-400 mt-0.5">Artiste</span>
+            </div>
+          `;
+        }).join('');
+      } else if (artistsContainer) {
+        artistsContainer.classList.add('hidden');
+      }
+
       if (!tracks || tracks.length === 0) {
         document.getElementById('search-top-container').classList.add('hidden');
         document.getElementById('search-more-container').classList.add('hidden');
+        refreshIcons();
         return;
       }
 
       document.getElementById('search-top-container').classList.remove('hidden');
 
-      // 1. TOP RESULT CARD (Spotify Desktop Style)
+      // 2. TOP RESULT CARD (Spotify Desktop Style)
       const topTrack = tracks[0];
       const isTopLiked = isTrackLiked(topTrack);
       const topEncoded = JSON.stringify(topTrack).replace(/"/g, '&quot;');
@@ -1519,7 +1611,7 @@
             </div>
             <h2 class="text-2xl sm:text-3xl font-black ${isCurrentTop ? 'text-spotify-green' : 'text-white'} group-hover:underline line-clamp-1 mb-2">${topTrack.title}</h2>
             <div class="flex items-center gap-2 text-sm text-zinc-400">
-              <span class="font-medium text-white">${topTrack.artist}</span>
+              <span onclick="event.stopPropagation(); viewArtistByName('${topTrack.artist.replace(/'/g, "\\'")}')" class="font-medium text-white hover:underline cursor-pointer">${topTrack.artist}</span>
               <span>•</span>
               <span class="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white/10 text-white tracking-wider">Titre</span>
             </div>
@@ -1540,7 +1632,7 @@
         `;
       }
 
-      // 2. TOP 4 TRACKS LIST (Spotify Side List)
+      // 3. TOP 4 TRACKS LIST (Spotify Side List)
       const topTracksEl = document.getElementById('search-top-tracks');
       if (topTracksEl) {
         const top4 = tracks.slice(0, 4);
@@ -1560,7 +1652,7 @@
                 </div>
                 <div class="truncate pr-2">
                   <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
-                  <p class="text-xs text-zinc-400 truncate hover:text-white">${t.artist}</p>
+                  <p onclick="event.stopPropagation(); viewArtistByName('${t.artist.replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 truncate hover:text-white hover:underline cursor-pointer">${t.artist}</p>
                 </div>
               </div>
               <div class="flex items-center gap-3 text-xs text-zinc-400 font-mono flex-shrink-0">
@@ -1580,7 +1672,7 @@
         }).join('');
       }
 
-      // 3. MORE TRACKS (Grid below)
+      // 4. MORE TRACKS (Grid below)
       const moreContainer = document.getElementById('search-more-container');
       const moreTracks = tracks.slice(4);
       if (moreTracks.length > 0) {
@@ -1597,12 +1689,266 @@
     function clearSearch() {
       document.getElementById('global-search-input').value = '';
       document.getElementById('search-results-section').classList.add('hidden');
+      document.getElementById('artist-detail-section').classList.add('hidden');
       document.getElementById('category-pills-bar').classList.remove('hidden');
       document.getElementById('home-default-section').classList.remove('hidden');
       document.getElementById('section-trending').classList.remove('hidden');
       document.getElementById('section-top50').classList.remove('hidden');
       document.getElementById('section-rap').classList.remove('hidden');
       document.getElementById('section-electro').classList.remove('hidden');
+    }
+
+    // ARTIST PROFILE MANAGEMENT (Spotify Official Style)
+    let currentArtistData = null;
+    let isArtistTracksExpanded = false;
+
+    async function viewArtistByName(artistName) {
+      if (!artistName) return;
+      const cleanName = artistName.split(',')[0].trim();
+      showToast(`Chargement de : ${cleanName}...`);
+      try {
+        const res = await fetch(`/api/artist?q=${encodeURIComponent(cleanName)}`);
+        const data = await res.json();
+        if (data.success && data.artist) {
+          renderArtistProfile(data.artist);
+        } else {
+          showToast("Profil artiste introuvable");
+        }
+      } catch (e) {
+        showToast("Erreur de chargement");
+      }
+    }
+
+    async function viewArtistByBrowseId(browseId, fallbackName = "") {
+      if (!browseId) return;
+      showToast(`Chargement du profil...`);
+      try {
+        const res = await fetch(`/api/artist?browseId=${encodeURIComponent(browseId)}`);
+        const data = await res.json();
+        if (data.success && data.artist) {
+          renderArtistProfile(data.artist);
+        } else if (fallbackName) {
+          viewArtistByName(fallbackName);
+        }
+      } catch (e) {
+        if (fallbackName) viewArtistByName(fallbackName);
+        else showToast("Erreur de chargement");
+      }
+    }
+
+    function renderArtistProfile(artist) {
+      currentArtistData = artist;
+      isArtistTracksExpanded = false;
+
+      // Hide all other views
+      document.getElementById('playlist-detail-section').classList.add('hidden');
+      document.getElementById('search-results-section').classList.add('hidden');
+      document.getElementById('home-default-section').classList.add('hidden');
+      document.getElementById('category-pills-bar').classList.add('hidden');
+      document.getElementById('section-trending').classList.add('hidden');
+      document.getElementById('section-top50').classList.add('hidden');
+      document.getElementById('section-rap').classList.add('hidden');
+      document.getElementById('section-electro').classList.add('hidden');
+
+      // Show artist section
+      const section = document.getElementById('artist-detail-section');
+      section.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Populate hero
+      document.getElementById('artist-hero-name').innerText = artist.name;
+      document.getElementById('artist-hero-subs').innerText = artist.subscribers || "Artiste vérifié";
+      document.getElementById('artist-hero-bg').style.backgroundImage = `url('${artist.cover || ""}')`;
+
+      // Update follow button
+      const followBtn = document.getElementById('artist-follow-btn');
+      if (followBtn) {
+        const followed = JSON.parse(localStorage.getItem('spotiwave_followed_artists') || '[]');
+        followBtn.innerText = followed.includes(artist.name) ? "Abonné" : "Suivre";
+      }
+
+      // Render Popular Tracks
+      renderArtistPopularTracks();
+
+      // Render Discography
+      renderArtistDiscography('all');
+
+      refreshIcons();
+      updatePlayingTrackIndicators();
+    }
+
+    function renderArtistPopularTracks() {
+      if (!currentArtistData || !currentArtistData.tracks) return;
+      const tracks = currentArtistData.tracks;
+      const limit = isArtistTracksExpanded ? tracks.length : Math.min(5, tracks.length);
+      const displayTracks = tracks.slice(0, limit);
+
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+
+      const container = document.getElementById('artist-tracks-container');
+      container.innerHTML = displayTracks.map((t, idx) => {
+        const isCurrent = currentTitle && (t.title || '').trim().toLowerCase() === currentTitle;
+        const isThisPlaying = isCurrent && isPlaying;
+        const isLiked = isTrackLiked(t);
+        const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+        return `
+          <div onclick="playTrackFromArtist(${idx})" class="track-row group grid grid-cols-[36px_1fr_auto] md:grid-cols-[36px_5fr_3fr_minmax(100px,1fr)] gap-4 items-center px-4 py-2 hover:bg-white/10 rounded-md transition duration-150 cursor-pointer select-none ${isCurrent ? 'is-active bg-white/5' : ''}">
+            <!-- Col 1: Index / Play Icon / Equalizer -->
+            <div class="flex items-center justify-center">
+              <span class="row-index text-sm font-mono ${isCurrent ? 'hidden' : 'text-zinc-400'} group-hover:hidden">${idx + 1}</span>
+              <button class="row-play-btn hidden group-hover:flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </button>
+              <div class="equalizer-bars ${isCurrent ? (isThisPlaying ? 'playing' : 'paused') : 'hidden'}">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <!-- Col 2: Thumbnail & Title -->
+            <div class="flex items-center gap-3.5 min-w-0 overflow-hidden">
+              <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded object-cover flex-shrink-0 shadow border border-white/5" alt="Cover" loading="lazy">
+              <div class="truncate">
+                <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
+                <p class="text-xs text-zinc-400 truncate md:hidden">${t.artist}</p>
+              </div>
+            </div>
+
+            <!-- Col 3: Artist (Desktop) -->
+            <div class="hidden md:block truncate text-sm text-zinc-400">
+              <span>${t.artist}</span>
+            </div>
+
+            <!-- Col 4: Actions & Duration -->
+            <div class="flex items-center justify-end gap-3 text-xs text-zinc-400 font-mono">
+              <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" class="p-1 rounded-full hover:scale-110 transition cursor-pointer ${isLiked ? 'text-spotify-green opacity-100' : 'text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-white'}" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green' : ''}"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" class="p-1 rounded-full text-zinc-400 hover:text-white hover:scale-110 transition cursor-pointer opacity-0 group-hover:opacity-100" title="Ajouter à une playlist">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+              <span class="w-12 text-right">${formatDuration(t.duration)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const moreBtn = document.getElementById('artist-more-tracks-btn');
+      if (moreBtn) {
+        if (tracks.length <= 5) {
+          moreBtn.classList.add('hidden');
+        } else {
+          moreBtn.classList.remove('hidden');
+          moreBtn.innerText = isArtistTracksExpanded ? "Afficher moins" : "Afficher plus";
+        }
+      }
+      refreshIcons();
+    }
+
+    function toggleArtistTracksExpand() {
+      isArtistTracksExpanded = !isArtistTracksExpanded;
+      renderArtistPopularTracks();
+    }
+
+    function playTrackFromArtist(index) {
+      if (!currentArtistData || !currentArtistData.tracks || !currentArtistData.tracks[index]) return;
+      currentPlaylist = [...currentArtistData.tracks];
+      loadTrack(index, true);
+    }
+
+    function playCurrentArtistView(shuffle = false) {
+      if (!currentArtistData || !currentArtistData.tracks || currentArtistData.tracks.length === 0) return;
+      currentPlaylist = [...currentArtistData.tracks];
+      if (shuffle) {
+        isShuffle = true;
+        updateShuffleUI();
+        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+      } else {
+        currentTrackIndex = 0;
+      }
+      loadTrack(currentTrackIndex, true);
+    }
+
+    function filterArtistDisco(tab) {
+      ['all', 'albums', 'singles'].forEach(t => {
+        const b = document.getElementById(`disco-btn-${t}`);
+        if (!b) return;
+        if (t === tab) {
+          b.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition cursor-pointer";
+        } else {
+          b.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer";
+        }
+      });
+
+      renderArtistDiscography(tab);
+    }
+
+    function renderArtistDiscography(tab = 'all') {
+      if (!currentArtistData) return;
+      const albums = currentArtistData.albums || [];
+      const singles = currentArtistData.singles || [];
+
+      let items = [];
+      if (tab === 'albums') items = albums;
+      else if (tab === 'singles') items = singles;
+      else items = [...albums, ...singles];
+
+      const container = document.getElementById('artist-disco-grid');
+      if (!container) return;
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="col-span-full text-sm text-zinc-500 py-4">Aucun album disponible</p>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        return `
+          <div onclick="playOrViewAlbum('${item.browseId}')" class="group bg-[#181818] hover:bg-[#282828] p-3.5 rounded-lg transition-all duration-300 cursor-pointer flex flex-col relative shadow-md hover:shadow-2xl border border-white/5">
+            <div class="relative w-full aspect-square mb-3.5 rounded-md overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
+              <img src="${item.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}" loading="lazy">
+              <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300">
+                <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </div>
+            </div>
+            <h3 class="text-sm font-bold text-white truncate group-hover:underline" title="${item.title}">${item.title}</h3>
+            <p class="text-xs text-zinc-400 mt-1">${item.year ? `${item.year} • ` : ''}${item.type || 'Album'}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function playOrViewAlbum(browseId) {
+      if (!browseId) return;
+      showToast("Chargement de l'album...");
+      try {
+        const res = await fetch(`/api/album?browseId=${encodeURIComponent(browseId)}`);
+        const data = await res.json();
+        if (data.success && data.album && data.album.tracks.length > 0) {
+          currentPlaylist = data.album.tracks;
+          showToast(`Lecture de : ${data.album.title}`);
+          loadTrack(0, true);
+        }
+      } catch (e) {
+        showToast("Erreur lors de la lecture de l'album");
+      }
+    }
+
+    let followedArtists = JSON.parse(localStorage.getItem('spotiwave_followed_artists') || '[]');
+    function toggleFollowCurrentArtist() {
+      if (!currentArtistData || !currentArtistData.name) return;
+      const name = currentArtistData.name;
+      const idx = followedArtists.indexOf(name);
+      const btn = document.getElementById('artist-follow-btn');
+      if (idx > -1) {
+        followedArtists.splice(idx, 1);
+        if (btn) btn.innerText = "Suivre";
+        showToast(`Désabonné de ${name}`);
+      } else {
+        followedArtists.push(name);
+        if (btn) btn.innerText = "Abonné";
+        showToast(`Abonné à ${name} !`);
+      }
+      localStorage.setItem('spotiwave_followed_artists', JSON.stringify(followedArtists));
     }
 
     // CATEGORY FILTER
@@ -2778,6 +3124,7 @@
         viewLikedSongsPlaylist();
       } else {
         clearSearch();
+        document.getElementById('artist-detail-section').classList.add('hidden');
         document.getElementById('playlist-detail-section').classList.add('hidden');
         document.getElementById('home-default-section').classList.remove('hidden');
         document.getElementById('category-pills-bar').classList.remove('hidden');

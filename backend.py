@@ -30,6 +30,8 @@ ytm = YTMusic()
 # Memory caches
 stream_cache: Dict[str, Dict] = {}
 feed_cache: Dict[str, Dict] = {}
+artist_cache: Dict[str, Dict] = {}
+album_cache: Dict[str, Dict] = {}
 
 class Room:
     def __init__(self, room_id: str):
@@ -376,7 +378,170 @@ async def search_tracks(q: str = Query(..., min_length=1)):
             if t:
                 tracks.append(t)
 
-        return JSONResponse(content={"success": True, "count": len(tracks), "tracks": tracks})
+        artists = []
+        try:
+            art_raw = ytm.search(clean_q, filter="artists")[:4] or []
+            for a in art_raw:
+                th = a.get("thumbnails", [])
+                c = th[-1].get("url", "") if th else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop"
+                b_id = a.get("browseId")
+                if b_id:
+                    artists.append({
+                        "name": a.get("artist") or a.get("name"),
+                        "browseId": b_id,
+                        "subscribers": a.get("subscribers", ""),
+                        "cover": c
+                    })
+        except Exception:
+            pass
+
+        return JSONResponse(content={"success": True, "count": len(tracks), "tracks": tracks, "artists": artists})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/artist")
+async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = None):
+    now = time.time()
+    cache_key = browseId or (q.strip().lower() if q else "")
+    if cache_key and cache_key in artist_cache and (now - artist_cache[cache_key]["time"]) < 3600:
+        return JSONResponse(content={"success": True, "artist": artist_cache[cache_key]["data"]})
+
+    try:
+        target_browse_id = browseId
+        if not target_browse_id and q:
+            art_search = ytm.search(q.strip(), filter="artists") or []
+            if art_search and art_search[0].get("browseId"):
+                target_browse_id = art_search[0].get("browseId")
+
+        if not target_browse_id:
+            return JSONResponse(status_code=404, content={"success": False, "error": "Artiste introuvable"})
+
+        data = ytm.get_artist(target_browse_id)
+        name = data.get("name") or q or "Artiste"
+        subscribers = data.get("subscribers") or ""
+        thumbs = data.get("thumbnails", [])
+        cover = thumbs[-1].get("url", "") if thumbs else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=800&fit=crop"
+
+        tracks = []
+        songs_data = data.get("songs", {})
+        pl_id = songs_data.get("browseId")
+        if pl_id:
+            try:
+                pl = ytm.get_playlist(pl_id, limit=35)
+                for t in pl.get("tracks", []):
+                    vid = t.get("videoId")
+                    if vid:
+                        art = ", ".join([a.get("name", "") for a in t.get("artists", [])]) if t.get("artists") else name
+                        th = t.get("thumbnails", [])
+                        c = th[-1].get("url", "") if th else cover
+                        tracks.append({
+                            "id": vid,
+                            "title": t.get("title", "Titre"),
+                            "artist": art,
+                            "duration": t.get("duration", "3:30"),
+                            "cover": c
+                        })
+            except Exception:
+                pass
+
+        if len(tracks) < 5:
+            fallback_songs = ytm.search(name, filter="songs")[:25] or []
+            existing_ids = set([x["id"] for x in tracks])
+            for t in fallback_songs:
+                vid = t.get("videoId")
+                if vid and vid not in existing_ids:
+                    art = ", ".join([a.get("name", "") for a in t.get("artists", [])]) if t.get("artists") else name
+                    th = t.get("thumbnails", [])
+                    c = th[-1].get("url", "") if th else cover
+                    tracks.append({
+                        "id": vid,
+                        "title": t.get("title", "Titre"),
+                        "artist": art,
+                        "duration": t.get("duration", "3:30"),
+                        "cover": c
+                    })
+                    existing_ids.add(vid)
+
+        albums = []
+        for alb in data.get("albums", {}).get("results", [])[:12]:
+            th = alb.get("thumbnails", [])
+            c = th[-1].get("url", "") if th else cover
+            albums.append({
+                "title": alb.get("title"),
+                "year": alb.get("year", ""),
+                "cover": c,
+                "browseId": alb.get("browseId"),
+                "type": "Album"
+            })
+
+        singles = []
+        for s in data.get("singles", {}).get("results", [])[:12]:
+            th = s.get("thumbnails", [])
+            c = th[-1].get("url", "") if th else cover
+            singles.append({
+                "title": s.get("title"),
+                "year": s.get("year", ""),
+                "cover": c,
+                "browseId": s.get("browseId"),
+                "type": "Single"
+            })
+
+        artist_obj = {
+            "name": name,
+            "browseId": target_browse_id,
+            "subscribers": subscribers,
+            "cover": cover,
+            "tracks": tracks,
+            "albums": albums,
+            "singles": singles
+        }
+
+        if cache_key:
+            artist_cache[cache_key] = {"data": artist_obj, "time": now}
+        if target_browse_id:
+            artist_cache[target_browse_id] = {"data": artist_obj, "time": now}
+
+        return JSONResponse(content={"success": True, "artist": artist_obj})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/album")
+async def get_album_details(browseId: str = Query(...)):
+    now = time.time()
+    if browseId in album_cache and (now - album_cache[browseId]["time"]) < 3600:
+        return JSONResponse(content={"success": True, "album": album_cache[browseId]["data"]})
+
+    try:
+        data = ytm.get_album(browseId)
+        title = data.get("title", "Album")
+        artists = ", ".join([a.get("name", "") for a in data.get("artists", [])]) if data.get("artists") else "Artiste"
+        thumbs = data.get("thumbnails", [])
+        cover = thumbs[-1].get("url", "") if thumbs else "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
+        year = data.get("year", "")
+
+        tracks = []
+        for t in data.get("tracks", []):
+            vid = t.get("videoId")
+            if vid:
+                art = ", ".join([a.get("name", "") for a in t.get("artists", [])]) if t.get("artists") else artists
+                tracks.append({
+                    "id": vid,
+                    "title": t.get("title", "Titre"),
+                    "artist": art,
+                    "duration": t.get("duration", "3:30"),
+                    "cover": cover
+                })
+
+        album_obj = {
+            "title": title,
+            "artist": artists,
+            "year": year,
+            "cover": cover,
+            "browseId": browseId,
+            "tracks": tracks
+        }
+        album_cache[browseId] = {"data": album_obj, "time": now}
+        return JSONResponse(content={"success": True, "album": album_obj})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
