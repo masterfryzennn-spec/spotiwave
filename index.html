@@ -1004,14 +1004,30 @@
 
     // LOAD LIVE CHARTS FROM REAL CATALOG
     async function loadLiveFeed() {
-      showSkeletons();
+      // 1. Instant render from local cache (0ms delay!)
+      const cachedFeed = localStorage.getItem('spotiwave_feed_cache');
+      if (cachedFeed) {
+        try {
+          liveFeedData = JSON.parse(cachedFeed);
+          renderAllFeeds();
+          if (liveFeedData.trending && liveFeedData.trending.length > 0 && (!currentPlaylist || currentPlaylist.length === 0)) {
+            currentPlaylist = [...liveFeedData.trending];
+            syncUIWithTrack(currentPlaylist[0]);
+          }
+        } catch(e) {}
+      } else {
+        showSkeletons();
+      }
+
+      // 2. Refresh fresh catalog in the background
       try {
         const res = await fetch('/api/feed');
         const json = await res.json();
         if (json.success && json.data) {
           liveFeedData = json.data;
+          localStorage.setItem('spotiwave_feed_cache', JSON.stringify(liveFeedData));
           renderAllFeeds();
-          if (liveFeedData.trending && liveFeedData.trending.length > 0) {
+          if (liveFeedData.trending && liveFeedData.trending.length > 0 && (!currentPlaylist || currentPlaylist.length === 0)) {
             currentPlaylist = [...liveFeedData.trending];
             syncUIWithTrack(currentPlaylist[0]);
           }

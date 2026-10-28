@@ -3,6 +3,7 @@ import sys
 import time
 import socket
 import re
+import asyncio
 import urllib.request
 import urllib.parse
 import json
@@ -154,43 +155,60 @@ def format_track(item: dict) -> Optional[dict]:
         "cover": cover
     }
 
+@app.on_event("startup")
+async def startup_prewarm():
+    # Pre-fetch live feed on server start so the very first user gets 0ms response
+    try:
+        asyncio.create_task(get_live_feed())
+    except Exception:
+        pass
+
 @app.get("/api/feed")
 async def get_live_feed():
     now = time.time()
-    if "home_feed" in feed_cache and (now - feed_cache["home_feed"]["time"]) < 3600:
+    if "home_feed" in feed_cache and (now - feed_cache["home_feed"]["time"]) < 21600:
         return JSONResponse(content={"success": True, "data": feed_cache["home_feed"]["data"]})
 
     try:
-        charts_fr = ytm.get_charts(country='FR')
-        videos_fr = charts_fr.get('videos', [])
-        
-        trending_tracks = []
-        top50_tracks = []
+        def fetch_charts():
+            try:
+                charts_fr = ytm.get_charts(country='FR')
+                videos_fr = charts_fr.get('videos', [])
+                trending_tracks = []
+                top50_tracks = []
+                if len(videos_fr) > 0:
+                    p_trend = ytm.get_playlist(videos_fr[0]['playlistId'])
+                    trending_tracks = [format_track(t) for t in p_trend.get('tracks', [])[:15] if format_track(t)]
+                if len(videos_fr) > 1:
+                    p_top = ytm.get_playlist(videos_fr[1]['playlistId'])
+                    top50_tracks = [format_track(t) for t in p_top.get('tracks', [])[:20] if format_track(t)]
+                return trending_tracks, top50_tracks
+            except Exception:
+                return [], []
 
-        if len(videos_fr) > 0:
-            p_trend = ytm.get_playlist(videos_fr[0]['playlistId'])
-            for t in p_trend.get('tracks', [])[:15]:
-                formatted = format_track(t)
-                if formatted:
-                    trending_tracks.append(formatted)
+        def fetch_rap():
+            try:
+                res = ytm.search("Top Rap Français", filter="songs")[:15]
+                return [format_track(t) for t in res if format_track(t)]
+            except Exception:
+                return []
 
-        if len(videos_fr) > 1:
-            p_top = ytm.get_playlist(videos_fr[1]['playlistId'])
-            for t in p_top.get('tracks', [])[:20]:
-                formatted = format_track(t)
-                if formatted:
-                    top50_tracks.append(formatted)
+        def fetch_electro():
+            try:
+                res = ytm.search("Top Hits Pop Electro", filter="songs")[:15]
+                return [format_track(t) for t in res if format_track(t)]
+            except Exception:
+                return []
 
-        # Rap FR & Global hits search
-        rap_results = ytm.search("Top Rap Français", filter="songs")[:15]
-        rap_tracks = [format_track(t) for t in rap_results if format_track(t)]
-
-        electro_results = ytm.search("Top Hits Pop Electro", filter="songs")[:15]
-        electro_tracks = [format_track(t) for t in electro_results if format_track(t)]
+        (charts_res, rap_tracks, electro_tracks) = await asyncio.gather(
+            asyncio.to_thread(fetch_charts),
+            asyncio.to_thread(fetch_rap),
+            asyncio.to_thread(fetch_electro)
+        )
 
         feed_data = {
-            "trending": trending_tracks,
-            "top50": top50_tracks,
+            "trending": charts_res[0],
+            "top50": charts_res[1],
             "rap": rap_tracks,
             "electro": electro_tracks
         }
