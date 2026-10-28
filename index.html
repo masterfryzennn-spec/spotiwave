@@ -197,10 +197,10 @@
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
 
-  <!-- DUAL AUDIO ENGINE: NATIVE HTML5 FOR IOS LOCK SCREEN & BACKGROUND, YOUTUBE AS FALLBACK -->
+  <!-- INVISIBLE YOUTUBE AUDIO ENGINE & IOS AUDIO SESSION KEEPER -->
   <div style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0.01; z-index: -1;">
     <div id="yt-player-box"></div>
-    <audio id="main-audio-player" playsinline preload="auto"></audio>
+    <audio id="ios-audio-keeper" loop playsinline preload="auto" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -994,7 +994,6 @@
     }
 
     function onPlayerStateChange(event) {
-      if (activePlayerEngine !== 'yt') return;
       if (event.data === 1) { // PLAYING
         setBuffering(false);
         setPlayState(true);
@@ -1068,101 +1067,20 @@
       setTimeout(playNext, 1200);
     }
 
-    // NATIVE HTML5 DUAL AUDIO ENGINE FOR IOS LOCK SCREEN & BACKGROUND
-    let activePlayerEngine = 'audio';
-    let audioLoadTimeout = null;
-    let mainAudio = null;
-
-    function initAudioEngine() {
-      mainAudio = document.getElementById('main-audio-player');
-      if (!mainAudio) return;
-
-      mainAudio.addEventListener('play', () => {
-        if (activePlayerEngine === 'audio') {
-          setBuffering(false);
-          setPlayState(true);
-          startProgressTracking();
-        }
-      });
-
-      mainAudio.addEventListener('pause', () => {
-        if (activePlayerEngine === 'audio') {
-          setPlayState(false);
-        }
-      });
-
-      mainAudio.addEventListener('waiting', () => {
-        if (activePlayerEngine === 'audio') {
-          setBuffering(true);
-        }
-      });
-
-      mainAudio.addEventListener('playing', () => {
-        if (activePlayerEngine === 'audio') {
-          setBuffering(false);
-          setPlayState(true);
-        }
-      });
-
-      mainAudio.addEventListener('ended', () => {
-        if (activePlayerEngine === 'audio') {
-          setBuffering(false);
-          stopProgressTracking();
-          onTrackEnded();
-        }
-      });
-
-      mainAudio.addEventListener('error', (e) => {
-        if (activePlayerEngine === 'audio') {
-          console.warn("HTML5 audio playback error, falling back to YouTube:", e);
-          const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
-          fallbackToYoutube(track, isPlaying);
-        }
-      });
-
-      mainAudio.addEventListener('timeupdate', () => {
-        if (activePlayerEngine === 'audio' && amISpeaker()) {
-          const cur = mainAudio.currentTime || 0;
-          const dur = (mainAudio.duration && !isNaN(mainAudio.duration) && mainAudio.duration > 0)
-            ? mainAudio.duration
-            : getPlaybackDuration();
-          if (dur > 0) {
-            const pct = (cur / dur) * 100;
-            const pBar = document.getElementById('progress-bar');
-            const fpBar = document.getElementById('full-progress-bar');
-            const cTime = document.getElementById('current-time');
-            const fcTime = document.getElementById('full-current-time');
-            const dTime = document.getElementById('duration-time');
-            const fdTime = document.getElementById('full-duration-time');
-            if (pBar) pBar.style.width = `${pct}%`;
-            if (fpBar) fpBar.style.width = `${pct}%`;
-            if (cTime) cTime.innerText = formatTime(cur);
-            if (fcTime) fcTime.innerText = formatTime(cur);
-            if (dTime) dTime.innerText = formatTime(dur);
-            if (fdTime) fdTime.innerText = formatTime(dur);
-
-            if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-              try {
-                navigator.mediaSession.setPositionState({
-                  duration: dur,
-                  playbackRate: 1.0,
-                  position: Math.min(cur, dur)
-                });
-              } catch(e) {}
-            }
-            updateLyricsHighlight(cur);
-          }
-        }
-      });
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
-      initAudioEngine();
       lucide.createIcons();
       updateGreeting();
       renderPlaylistsSidebar();
       loadLiveFeed();
       initWebSocket();
+
+      // Ensure iOS audio session stays active on tab hide / lock screen
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && isPlaying) {
+          const keeper = document.getElementById('ios-audio-keeper');
+          if (keeper) keeper.play().catch(() => {});
+        }
+      });
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
@@ -2325,67 +2243,24 @@
       if (!track || !track.id) return;
       currentPlayingVideoId = track.id;
       setBuffering(true);
-      clearTimeout(audioLoadTimeout);
 
-      if (!mainAudio) mainAudio = document.getElementById('main-audio-player');
-
-      if (mainAudio) {
-        activePlayerEngine = 'audio';
-        if (ytPlayer && ytPlayer.pauseVideo) {
-          try { ytPlayer.pauseVideo(); } catch(e) {}
-        }
-
-        const streamUrl = `/api/stream/${track.id}`;
-        if (mainAudio.src !== window.location.origin + streamUrl && mainAudio.getAttribute('src') !== streamUrl) {
-          mainAudio.src = streamUrl;
-          mainAudio.load();
-        }
-
-        if (autoplay) {
-          const p = mainAudio.play();
-          if (p !== undefined) {
-            p.then(() => {
-              setBuffering(false);
-              setPlayState(true);
-            }).catch(err => {
-              console.warn("HTML5 audio autoplay issue, falling back to YouTube:", err);
-              fallbackToYoutube(track, autoplay);
-            });
-          }
-        } else {
-          mainAudio.pause();
-          setPlayState(false);
-          setBuffering(false);
-        }
-
-        // Safety timeout: if after 8s the stream still hasn't started playing, fallback to YouTube
-        audioLoadTimeout = setTimeout(() => {
-          if (isBuffering && activePlayerEngine === 'audio') {
-            console.warn("Native stream timeout, falling back to YouTube");
-            fallbackToYoutube(track, autoplay);
-          }
-        }, 8000);
-      } else {
-        fallbackToYoutube(track, autoplay);
+      const keeper = document.getElementById('ios-audio-keeper');
+      if (keeper && autoplay) {
+        keeper.play().catch(() => {});
       }
-    }
-
-    function fallbackToYoutube(track, autoplay) {
-      clearTimeout(audioLoadTimeout);
-      activePlayerEngine = 'yt';
-      if (mainAudio) {
-        try { mainAudio.pause(); } catch(e) {}
-      }
-      if (!track) track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
-      if (!track || !track.id) return;
 
       if (isYtReady && ytPlayer && ytPlayer.loadVideoById) {
-        if (autoplay) {
-          ytPlayer.loadVideoById(track.id);
-          setPlayState(true);
-        } else {
-          ytPlayer.cueVideoById(track.id);
-          setPlayState(false);
+        try {
+          if (autoplay) {
+            ytPlayer.loadVideoById(track.id);
+            setPlayState(true);
+          } else {
+            ytPlayer.cueVideoById(track.id);
+            setPlayState(false);
+          }
+        } catch (e) {
+          console.warn("Direct play error:", e);
+          setBuffering(false);
         }
       } else {
         pendingTrack = track;
@@ -2541,27 +2416,6 @@
       }
     }
 
-    function playCurrentAudio() {
-      if (activePlayerEngine === 'audio' && mainAudio) {
-        mainAudio.play().catch(e => {
-          console.warn("Audio play error, falling back to YouTube:", e);
-          const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
-          fallbackToYoutube(track, true);
-        });
-      } else if (ytPlayer && ytPlayer.playVideo) {
-        try { ytPlayer.playVideo(); } catch(e) {}
-      }
-    }
-
-    function pauseCurrentAudio() {
-      if (mainAudio) {
-        try { mainAudio.pause(); } catch(e) {}
-      }
-      if (ytPlayer && ytPlayer.pauseVideo) {
-        try { ytPlayer.pauseVideo(); } catch(e) {}
-      }
-    }
-
     function togglePlay() {
       if (!amISpeaker()) {
         const nextState = !isPlaying;
@@ -2572,10 +2426,16 @@
       if (!currentPlaylist || currentPlaylist.length === 0) return;
 
       if (isPlaying) {
-        pauseCurrentAudio();
+        if (ytPlayer && ytPlayer.pauseVideo) {
+          try { ytPlayer.pauseVideo(); } catch(e) {}
+        }
         setPlayState(false);
       } else {
-        playCurrentAudio();
+        if (ytPlayer && ytPlayer.playVideo) {
+          try { ytPlayer.playVideo(); } catch(e) {}
+        } else {
+          loadTrack(currentTrackIndex, true);
+        }
         setPlayState(true);
       }
     }
@@ -2608,6 +2468,15 @@
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+      }
+
+      const keeper = document.getElementById('ios-audio-keeper');
+      if (keeper) {
+        if (playing) {
+          keeper.play().catch(() => {});
+        } else {
+          keeper.pause();
+        }
       }
 
       if (amISpeaker()) {
@@ -2651,7 +2520,9 @@
     function onTrackEnded() {
       if (isRepeat) {
         seekTo(0);
-        playCurrentAudio();
+        if (ytPlayer && ytPlayer.playVideo) {
+          try { ytPlayer.playVideo(); } catch(e) {}
+        }
       } else {
         playNext();
       }

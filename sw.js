@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spotiwave-cache-v18';
+const CACHE_NAME = 'spotiwave-cache-v19';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
