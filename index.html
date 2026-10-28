@@ -580,7 +580,9 @@
         <span id="device-mode-text" class="text-[11px] font-medium text-zinc-200 max-w-[90px] truncate">Appareils</span>
       </button>
 
-      <i data-lucide="volume-2" class="w-4 h-4 text-spotify-subtext"></i>
+      <button onclick="toggleMute()" id="mute-btn" title="Activer/Couper le son" class="text-spotify-subtext hover:text-white transition cursor-pointer p-1">
+        <i data-lucide="volume-2" id="volume-icon" class="w-4 h-4"></i>
+      </button>
       <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" onchange="setVolume(this.value)" class="w-20 h-1.5 bg-zinc-800 rounded-lg cursor-pointer" style="pointer-events: auto; touch-action: manipulation;">
     </div>
   </footer>
@@ -645,6 +647,17 @@
         <span id="full-current-time">0:00</span>
         <span id="full-duration-time">0:00</span>
       </div>
+    </div>
+
+    <!-- Mobile Volume Bar -->
+    <div class="flex items-center gap-3 px-4 mb-4">
+      <button onclick="toggleMute()" class="text-white/60 hover:text-white transition cursor-pointer">
+        <i data-lucide="volume-1" class="w-4 h-4"></i>
+      </button>
+      <input type="range" id="mobile-volume-slider" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)" class="w-full h-1 bg-white/20 rounded-lg cursor-pointer">
+      <button onclick="setVolume(1)" class="text-white/60 hover:text-white transition cursor-pointer">
+        <i data-lucide="volume-2" class="w-4 h-4"></i>
+      </button>
     </div>
 
     <div class="flex items-center justify-between px-4 pb-8">
@@ -2592,13 +2605,39 @@
     }
 
     let currentVolume = 80;
+    let isMuted = false;
+    let previousVolume = 80;
+
     function setVolume(val) {
-      currentVolume = Math.round(val * 100);
-      if (mainAudio) {
-        try { mainAudio.volume = Math.max(0, Math.min(1, parseFloat(val))); } catch(e) {}
-      }
+      const num = parseFloat(val);
+      if (isNaN(num)) return;
+      currentVolume = Math.round(Math.max(0, Math.min(1, num)) * 100);
+      isMuted = currentVolume === 0;
+
+      const desktopSlider = document.getElementById('volume-slider');
+      const mobileSlider = document.getElementById('mobile-volume-slider');
+      if (desktopSlider && parseFloat(desktopSlider.value) !== num) desktopSlider.value = num;
+      if (mobileSlider && parseFloat(mobileSlider.value) !== num) mobileSlider.value = num;
+
       if (ytPlayer && ytPlayer.setVolume) {
-        try { ytPlayer.setVolume(currentVolume); } catch(e) {}
+        try {
+          ytPlayer.setVolume(currentVolume);
+          if (currentVolume === 0 && ytPlayer.mute) {
+            ytPlayer.mute();
+          } else if (ytPlayer.unMute) {
+            ytPlayer.unMute();
+          }
+        } catch(e) {}
+      }
+    }
+
+    function toggleMute() {
+      if (isMuted) {
+        const targetVol = previousVolume > 0 ? previousVolume : 80;
+        setVolume(targetVol / 100);
+      } else {
+        previousVolume = currentVolume > 0 ? currentVolume : 80;
+        setVolume(0);
       }
     }
 
@@ -2649,6 +2688,7 @@
     }
 
     function seekTo(target) {
+      if (isNaN(target) || target < 0) return;
       lastSyncPosition = target;
       lastSyncTimestamp = Date.now();
       if (amISpeaker() && ytPlayer && ytPlayer.seekTo) {
@@ -2660,8 +2700,12 @@
 
     function handleSeekClick(e) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
+      const clientX = (e.touches && e.touches.length > 0) 
+        ? e.touches[0].clientX 
+        : (e.clientX != null ? e.clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : 0));
+      const clickX = clientX - rect.left;
       const width = rect.width;
+      if (width <= 0) return;
       const seekRatio = Math.max(0, Math.min(1, clickX / width));
 
       const dur = getPlaybackDuration();
@@ -2671,10 +2715,14 @@
       sendWs('CONTROL_COMMAND', { action: 'SEEK', position: target });
 
       const pct = dur > 0 ? (target / dur) * 100 : 0;
-      document.getElementById('progress-bar').style.width = `${pct}%`;
-      document.getElementById('full-progress-bar').style.width = `${pct}%`;
-      document.getElementById('current-time').innerText = formatTime(target);
-      document.getElementById('full-current-time').innerText = formatTime(target);
+      const pb = document.getElementById('progress-bar');
+      const fpb = document.getElementById('full-progress-bar');
+      const ct = document.getElementById('current-time');
+      const fct = document.getElementById('full-current-time');
+      if (pb) pb.style.width = `${pct}%`;
+      if (fpb) fpb.style.width = `${pct}%`;
+      if (ct) ct.innerText = formatTime(target);
+      if (fct) fct.innerText = formatTime(target);
     }
 
     function formatTime(seconds) {
