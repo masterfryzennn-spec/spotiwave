@@ -1167,6 +1167,11 @@
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
       }
+
+      // Keep-alive heartbeat ping every 4 minutes so Render never goes to sleep during listening sessions
+      setInterval(() => {
+        fetch('/api/ping').catch(() => {});
+      }, 4 * 60 * 1000);
     });
 
     // LOAD LIVE CHARTS FROM REAL CATALOG

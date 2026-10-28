@@ -157,13 +157,39 @@ def format_track(item: dict) -> Optional[dict]:
         "cover": cover
     }
 
+@app.get("/api/ping")
+async def ping():
+    return JSONResponse(content={"status": "ok", "time": time.time()})
+
 @app.on_event("startup")
 async def startup_prewarm():
-    # Pre-fetch live feed on server start so the very first user gets 0ms response
+    # 1. Pre-fetch live feed on server start so the very first user gets 0ms response
     try:
         asyncio.create_task(get_live_feed())
     except Exception:
         pass
+
+    # 2. Render Keep-Alive Heartbeat: pings external URL every 10 min to prevent 15-min idle spin-down
+    render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://spotiwave.onrender.com"
+    if render_url:
+        async def keep_alive_loop():
+            # Wait 5 minutes before beginning routine pings
+            await asyncio.sleep(300)
+            while True:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(
+                            f"{render_url.rstrip('/')}/api/ping",
+                            timeout=aiohttp.ClientTimeout(total=10)
+                        ) as resp:
+                            if resp.status == 200:
+                                pass
+                except Exception:
+                    pass
+                # Render shuts down after 15 minutes of inactivity; pinging every 10 minutes keeps it permanently active
+                await asyncio.sleep(600)
+
+        asyncio.create_task(keep_alive_loop())
 
 @app.get("/api/feed")
 async def get_live_feed():
