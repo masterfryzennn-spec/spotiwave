@@ -8,12 +8,13 @@ import urllib.request
 import urllib.parse
 import json
 from typing import Dict, List, Optional
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import RedirectResponse, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from ytmusicapi import YTMusic
 import yt_dlp
+import aiohttp
 
 app = FastAPI(title="SpotiWave Server")
 
@@ -625,8 +626,30 @@ async def get_track_lyrics(title: str = Query(...), artist: str = Query(""), vid
 
     return JSONResponse(content={'success': False, 'error': 'Paroles non disponibles pour ce titre'})
 
-def extract_audio_url(video_id: str) -> Optional[str]:
-    # 1. First try public high-speed Invidious API (bypasses datacenter bot blocks)
+def extract_audio_info(video_id: str) -> Optional[Dict]:
+    # 1. yt-dlp extracting format 140 (AAC 128kbps m4a) or fallback to 18 (mp4) / best audio
+    try:
+        ydl_opts = {
+            "format": "140/bestaudio[ext=m4a]/bestaudio/18/best",
+            "quiet": True,
+            "no_warnings": True,
+            "socket_timeout": 6,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+            url = info.get("url")
+            if url:
+                return {
+                    "url": url,
+                    "headers": dict(info.get("http_headers", {})),
+                    "filesize": info.get("filesize") or info.get("filesize_approx"),
+                    "ext": info.get("ext", "m4a"),
+                    "cached_at": time.time()
+                }
+    except Exception as e:
+        print(f"yt-dlp extract error for {video_id}: {e}")
+
+    # 2. Fallback: Invidious API
     invidious_endpoints = [
         f"https://yt.chocolatemoo53.com/api/v1/videos/{video_id}",
         f"https://invidious.jing.rocks/api/v1/videos/{video_id}"
@@ -639,50 +662,92 @@ def extract_audio_url(video_id: str) -> Optional[str]:
             audios = [f for f in data.get("adaptiveFormats", []) if "audio" in f.get("type", "")]
             if audios:
                 audios.sort(key=lambda x: int(x.get("bitrate", 0)), reverse=True)
-                return audios[0]["url"]
+                return {
+                    "url": audios[0]["url"],
+                    "headers": {"User-Agent": "Mozilla/5.0"},
+                    "filesize": None,
+                    "ext": "m4a",
+                    "cached_at": time.time()
+                }
         except Exception:
             pass
-
-    # 2. Second fallback: yt-dlp with mobile clients
-    try:
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "quiet": True,
-            "no_warnings": True,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["android", "ios", "mweb"]
-                }
-            }
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-            return info.get("url")
-    except Exception:
-        pass
 
     return None
 
 @app.get("/api/stream/{video_id}")
-async def get_stream_url(video_id: str, redirect: bool = False):
+async def stream_audio_track(video_id: str, request: Request, redirect: bool = False, info: bool = False):
     now = time.time()
-    if video_id in stream_cache and (now - stream_cache[video_id]["cached_at"]) < 10800:
-        url = stream_cache[video_id]["url"]
-        if redirect:
-            return RedirectResponse(url=url, status_code=307)
-        return JSONResponse(content={"url": url})
+    stream_data = stream_cache.get(video_id)
+    if not stream_data or (now - stream_data.get("cached_at", 0)) > 10800:
+        extracted = await asyncio.to_thread(extract_audio_info, video_id)
+        if extracted:
+            stream_cache[video_id] = extracted
+            stream_data = extracted
+        else:
+            return JSONResponse(status_code=404, content={"error": "Flux audio introuvable"})
 
-    url = extract_audio_url(video_id)
-    if url:
-        stream_cache[video_id] = {
-            "url": url,
-            "cached_at": now
+    if info:
+        return JSONResponse(content={"url": stream_data["url"], "filesize": stream_data.get("filesize")})
+
+    if redirect:
+        return RedirectResponse(url=stream_data["url"], status_code=307)
+
+    # Proxy audio stream chunks with full byte-range support for iOS Safari & Android
+    stream_url = stream_data["url"]
+    upstream_headers = dict(stream_data.get("headers", {}))
+    
+    # Forward client Range header if requested
+    client_range = request.headers.get("range")
+    if client_range:
+        upstream_headers["Range"] = client_range
+
+    session = aiohttp.ClientSession(headers=upstream_headers)
+    try:
+        upstream_resp = await session.get(stream_url)
+        
+        # If token/URL expired (403/410), refresh cache once
+        if upstream_resp.status in (403, 410):
+            stream_cache.pop(video_id, None)
+            stream_data = await asyncio.to_thread(extract_audio_info, video_id)
+            if stream_data:
+                stream_cache[video_id] = stream_data
+                await upstream_resp.release()
+                upstream_headers = dict(stream_data.get("headers", {}))
+                if client_range:
+                    upstream_headers["Range"] = client_range
+                upstream_resp = await session.get(stream_data["url"])
+            else:
+                await upstream_resp.release()
+                await session.close()
+                return JSONResponse(status_code=404, content={"error": "Flux audio expiré"})
+
+        status_code = upstream_resp.status
+        content_type = upstream_resp.headers.get("Content-Type", "audio/mp4")
+        if "audio" not in content_type and "video" not in content_type:
+            content_type = "audio/mp4"
+
+        response_headers = {
+            "Accept-Ranges": "bytes",
+            "Content-Type": content_type,
+            "Cache-Control": "public, max-age=3600"
         }
-        if redirect:
-            return RedirectResponse(url=url, status_code=307)
-        return JSONResponse(content={"url": url})
+        if "Content-Range" in upstream_resp.headers:
+            response_headers["Content-Range"] = upstream_resp.headers["Content-Range"]
+        if "Content-Length" in upstream_resp.headers:
+            response_headers["Content-Length"] = upstream_resp.headers["Content-Length"]
 
-    return JSONResponse(status_code=404, content={"error": "Audio stream not found"})
+        async def stream_generator():
+            try:
+                async for chunk in upstream_resp.content.iter_chunked(64 * 1024):
+                    yield chunk
+            finally:
+                upstream_resp.close()
+                await session.close()
+
+        return StreamingResponse(stream_generator(), status_code=status_code, headers=response_headers)
+    except Exception as e:
+        await session.close()
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @app.websocket("/ws")
