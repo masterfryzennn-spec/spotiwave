@@ -653,50 +653,35 @@ async def get_track_lyrics(title: str = Query(...), artist: str = Query(""), vid
     return JSONResponse(content={'success': False, 'error': 'Paroles non disponibles pour ce titre'})
 
 def extract_audio_info(video_id: str) -> Optional[Dict]:
-    # 1. yt-dlp extracting format 140 (AAC 128kbps m4a) or fallback to 18 (mp4) / best audio
-    try:
-        ydl_opts = {
-            "format": "140/bestaudio[ext=m4a]/bestaudio/18/best",
-            "quiet": True,
-            "no_warnings": True,
-            "socket_timeout": 6,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-            url = info.get("url")
-            if url:
-                return {
-                    "url": url,
-                    "headers": dict(info.get("http_headers", {})),
-                    "filesize": info.get("filesize") or info.get("filesize_approx"),
-                    "ext": info.get("ext", "m4a"),
-                    "cached_at": time.time()
-                }
-    except Exception as e:
-        print(f"yt-dlp extract error for {video_id}: {e}")
-
-    # 2. Fallback: Invidious API
-    invidious_endpoints = [
-        f"https://yt.chocolatemoo53.com/api/v1/videos/{video_id}",
-        f"https://invidious.jing.rocks/api/v1/videos/{video_id}"
+    # 1. yt-dlp with mobile clients (android, ios) to reliably bypass datacenter IP bot detection on cloud servers
+    client_configs = [
+        {"player_client": ["android", "ios"]},
+        {"player_client": ["mweb", "android"]},
+        {}
     ]
-    for ep in invidious_endpoints:
+    for cfg in client_configs:
         try:
-            req = urllib.request.Request(ep, headers={"User-Agent": "Mozilla/5.0"})
-            res = urllib.request.urlopen(req, timeout=4)
-            data = json.loads(res.read())
-            audios = [f for f in data.get("adaptiveFormats", []) if "audio" in f.get("type", "")]
-            if audios:
-                audios.sort(key=lambda x: int(x.get("bitrate", 0)), reverse=True)
-                return {
-                    "url": audios[0]["url"],
-                    "headers": {"User-Agent": "Mozilla/5.0"},
-                    "filesize": None,
-                    "ext": "m4a",
-                    "cached_at": time.time()
-                }
-        except Exception:
-            pass
+            ydl_opts = {
+                "format": "ba/b",
+                "quiet": True,
+                "no_warnings": True,
+                "socket_timeout": 6,
+            }
+            if cfg:
+                ydl_opts["extractor_args"] = {"youtube": cfg}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+                url = info.get("url")
+                if url:
+                    return {
+                        "url": url,
+                        "headers": dict(info.get("http_headers", {})),
+                        "filesize": info.get("filesize") or info.get("filesize_approx"),
+                        "ext": info.get("ext", "mp4"),
+                        "cached_at": time.time()
+                    }
+        except Exception as e:
+            print(f"yt-dlp extract error for {video_id} with {cfg}: {e}")
 
     return None
 
