@@ -952,6 +952,9 @@
     let userPlaylists = JSON.parse(localStorage.getItem('spotiwave_playlists') || '[]');
     let activeViewingPlaylistId = null;
     let trackToAddToPlaylist = null;
+    let isLyricsViewOpen = false;
+    let currentTrackLyrics = null;
+    let currentActiveLyricIndex = -1;
 
     let ws = null;
 
@@ -2626,23 +2629,20 @@
     }
 
     function getCurrentPlaybackTime() {
-      if (activePlayerEngine === 'audio' && mainAudio) {
-        return mainAudio.currentTime || 0;
-      }
       if (ytPlayer && ytPlayer.getCurrentTime) {
-        return ytPlayer.getCurrentTime() || 0;
+        try {
+          return ytPlayer.getCurrentTime() || 0;
+        } catch(e) {}
       }
       return 0;
     }
 
     function getPlaybackDuration() {
-      if (activePlayerEngine === 'audio' && mainAudio) {
-        if (mainAudio.duration && !isNaN(mainAudio.duration) && mainAudio.duration > 0) {
-          return mainAudio.duration;
-        }
-      }
-      if (ytPlayer && ytPlayer.getDuration && ytPlayer.getDuration() > 0) {
-        return ytPlayer.getDuration();
+      if (ytPlayer && ytPlayer.getDuration) {
+        try {
+          const d = ytPlayer.getDuration();
+          if (d > 0) return d;
+        } catch(e) {}
       }
       const track = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
       return parseDurationSeconds(track?.duration || "3:30");
@@ -2651,13 +2651,9 @@
     function seekTo(target) {
       lastSyncPosition = target;
       lastSyncTimestamp = Date.now();
-      if (amISpeaker()) {
+      if (amISpeaker() && ytPlayer && ytPlayer.seekTo) {
         try {
-          if (activePlayerEngine === 'audio' && mainAudio) {
-            mainAudio.currentTime = target;
-          } else if (ytPlayer && ytPlayer.seekTo) {
-            ytPlayer.seekTo(target, true);
-          }
+          ytPlayer.seekTo(target, true);
         } catch(e) {}
       }
     }
@@ -2777,10 +2773,6 @@
     }
 
     // SPOTIFY LYRICS & KARAOKE ENGINE
-    let isLyricsViewOpen = false;
-    let currentTrackLyrics = null;
-    let currentActiveLyricIndex = -1;
-
     async function toggleLyricsView() {
       if (isLyricsViewOpen) {
         closeLyricsView();
@@ -2955,7 +2947,14 @@
 
         if (activeIndex >= 0) {
           const activeEl = document.getElementById(`lyric-line-${activeIndex}`);
-          if (activeEl) {
+          const container = document.getElementById('lyrics-scroll-container');
+          if (activeEl && container) {
+            const elTop = activeEl.offsetTop;
+            const elHeight = activeEl.offsetHeight;
+            const containerHeight = container.clientHeight;
+            const targetScroll = elTop - (containerHeight / 2) + (elHeight / 2);
+            container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+          } else if (activeEl) {
             activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
