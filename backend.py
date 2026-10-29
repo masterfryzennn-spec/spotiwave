@@ -761,10 +761,12 @@ async def get_track_lyrics(title: str = Query(...), artist: str = Query(""), vid
     return JSONResponse(content={'success': False, 'error': 'Paroles non disponibles pour ce titre'})
 
 def extract_audio_info(video_id: str) -> Optional[Dict]:
-    # 1. yt-dlp with mobile clients (android, ios) to reliably bypass datacenter IP bot detection on cloud servers
+    # Prioritize android and android_vr clients which reliably provide direct audio streams
+    # without bot detection or signature challenges on cloud datacenter IPs
     client_configs = [
-        {"player_client": ["android", "ios"]},
-        {"player_client": ["mweb", "android"]},
+        {"player_client": ["android"]},
+        {"player_client": ["android_vr"]},
+        {"player_client": ["web"]},
         {}
     ]
     for cfg in client_configs:
@@ -773,7 +775,8 @@ def extract_audio_info(video_id: str) -> Optional[Dict]:
                 "format": "ba/b",
                 "quiet": True,
                 "no_warnings": True,
-                "socket_timeout": 6,
+                "socket_timeout": 8,
+                "js_runtimes": {"deno": {}, "node": {}}
             }
             if cfg:
                 ydl_opts["extractor_args"] = {"youtube": cfg}
@@ -843,6 +846,8 @@ async def stream_audio_track(video_id: str, request: Request, redirect: bool = F
         status_code = upstream_resp.status
         content_type = upstream_resp.headers.get("Content-Type", "audio/mp4")
         if "audio" not in content_type and "video" not in content_type:
+            content_type = "audio/mp4"
+        elif "video/mp4" in content_type:
             content_type = "audio/mp4"
 
         response_headers = {
