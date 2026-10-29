@@ -432,23 +432,59 @@ def clean_music_query(query: str) -> str:
     return q.strip()
 
 @app.get("/api/resolve")
-async def resolve_track_query(q: str = Query(..., min_length=1), exclude: Optional[str] = None):
+async def resolve_track_query(
+    q: str = Query(..., min_length=1),
+    artist: Optional[str] = None,
+    title: Optional[str] = None,
+    exclude: Optional[str] = None
+):
     try:
         clean_q = clean_music_query(q)
         excluded = [x.strip() for x in exclude.split(",")] if exclude else []
 
+        target_title = title or ""
+        target_artist = artist or ""
+        if not target_title and not target_artist:
+            if " - " in clean_q:
+                parts = clean_q.split(" - ", 1)
+                target_title, target_artist = parts[0], parts[1]
+
+        def is_valid_match(cand: dict) -> bool:
+            if not cand:
+                return False
+            cand_title = (cand.get("title") or "").lower()
+            cand_artist = (cand.get("artist") or "").lower()
+            cand_full = f"{cand_title} {cand_artist}"
+
+            # 1. Match artist if known
+            if target_artist:
+                art_clean = clean_music_query(target_artist).lower()
+                art_words = [w for w in re.findall(r'[\w\'-]+', art_clean) if len(w) >= 2 and w not in ('feat', 'ft', 'de', 'du', 'the', 'with', 'by')]
+                if art_words and not any(w in cand_full for w in art_words):
+                    return False
+
+            # 2. Match title if known
+            if target_title:
+                tit_clean = clean_music_query(target_title).lower()
+                tit_words = [w for w in re.findall(r'[\w\'-]+', tit_clean) if len(w) >= 2 and w not in ('feat', 'ft', 'de', 'du', 'the', 'with', 'by')]
+                if tit_words and not any(w in cand_title for w in tit_words):
+                    return False
+
+            return True
+
         # 1. Search cleaned query in songs
         results = ytm.search(clean_q, filter="songs") or []
-        
+
         # 2. Also append general audio/topic results for non-blocked alternatives
         try:
-            audio_results = ytm.search(f"{clean_q} audio") or []
-            existing_ids = set([r.get("videoId") for r in results if r.get("videoId")])
-            for a in audio_results:
-                vid = a.get("videoId")
-                if vid and vid not in existing_ids:
-                    results.append(a)
-                    existing_ids.add(vid)
+            for extra_term in [f"{clean_q} audio", f"{clean_q} lyrics"]:
+                extra_res = ytm.search(extra_term) or []
+                existing_ids = set([r.get("videoId") for r in results if r.get("videoId")])
+                for a in extra_res:
+                    vid = a.get("videoId")
+                    if vid and vid not in existing_ids:
+                        results.append(a)
+                        existing_ids.add(vid)
         except Exception:
             pass
 
@@ -461,12 +497,12 @@ async def resolve_track_query(q: str = Query(..., min_length=1), exclude: Option
             vid = item.get("videoId")
             if vid and vid not in excluded:
                 t = format_track(item)
-                if t:
+                if t and is_valid_match(t):
                     valid_items.append(t)
 
         if valid_items:
             best_track = valid_items[0]
-            # Include alternative candidate IDs for automatic error-150 failover
+            # Include alternative candidate IDs matching the artist & title
             best_track["alternativeIds"] = [x["id"] for x in valid_items[1:6] if x.get("id")]
             return JSONResponse(content={"success": True, "track": best_track})
 
@@ -812,7 +848,8 @@ async def stream_audio_track(video_id: str, request: Request, redirect: bool = F
         response_headers = {
             "Accept-Ranges": "bytes",
             "Content-Type": content_type,
-            "Cache-Control": "public, max-age=3600"
+            "Cache-Control": "public, max-age=3600",
+            "Access-Control-Allow-Origin": "*"
         }
         if "Content-Range" in upstream_resp.headers:
             response_headers["Content-Range"] = upstream_resp.headers["Content-Range"]

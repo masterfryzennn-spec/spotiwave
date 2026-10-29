@@ -510,6 +510,7 @@
   <div style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0.01; z-index: -1;">
     <div id="yt-player-box"></div>
     <audio id="ios-audio-keeper" loop playsinline preload="auto" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
+    <audio id="stream-audio-player" playsinline preload="auto"></audio>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -1729,17 +1730,51 @@
     }
 
     let failedVideoIds = new Set();
-    function onPlayerError(e) {
-      setBuffering(false);
-      const currentTrack = currentPlaylist[currentTrackIndex];
-      const failedId = currentPlayingVideoId;
-      if (failedId) failedVideoIds.add(failedId);
+    let streamFallbackTried = new Set();
+    let activeAudioEngine = 'youtube'; // 'youtube' or 'stream'
 
-      // 1. If preloaded alternative IDs exist, try the next one immediately
-      if (currentTrack && currentTrack.alternativeIds && currentTrack.alternativeIds.length > 0) {
+    function playViaDirectStream(track, startTime = 0) {
+      if (!track || !track.id) return;
+      activeAudioEngine = 'stream';
+      currentPlayingVideoId = track.id;
+
+      if (ytPlayer && ytPlayer.stopVideo) {
+        try { ytPlayer.stopVideo(); } catch(e) {}
+      }
+
+      const streamAudio = document.getElementById('stream-audio-player');
+      if (!streamAudio) return;
+
+      setBuffering(true);
+      showToast("Flux audio direct haute fidélité...");
+      streamAudio.src = `/api/stream/${track.id}`;
+      streamAudio.volume = Math.max(0, Math.min(1, currentVolume / 100));
+      streamAudio.currentTime = startTime;
+      streamAudio.play().then(() => {
+        setBuffering(false);
+        setPlayState(true);
+        startProgressTracking();
+      }).catch(err => {
+        console.warn("Direct stream playback error:", err);
+        setBuffering(false);
+        tryAlternativeTrack();
+      });
+    }
+
+    function tryAlternativeTrack() {
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      if (!currentTrack) {
+        showToast("Titre non disponible, passage au suivant...");
+        setTimeout(playNext, 1200);
+        return;
+      }
+      activeAudioEngine = 'youtube';
+
+      // 1. If preloaded alternative IDs exist and haven't failed, try next
+      if (currentTrack.alternativeIds && currentTrack.alternativeIds.length > 0) {
         const altId = currentTrack.alternativeIds.shift();
         if (altId && !failedVideoIds.has(altId)) {
-          showToast("Tentative avec une version audio libre...");
+          showToast("Tentative avec une version audio alternative...");
           currentTrack.id = altId;
           currentPlayingVideoId = altId;
           saveResolvedTrack(currentTrack);
@@ -1751,39 +1786,87 @@
         }
       }
 
-      // 2. Query resolve with excluded list to find another free version
-      if (currentTrack) {
-        showToast("Recherche d'une version audio libre...");
-        const excludeList = Array.from(failedVideoIds).join(',');
-        fetch(`/api/resolve?q=${encodeURIComponent(currentTrack.title + ' ' + currentTrack.artist)}&exclude=${encodeURIComponent(excludeList)}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.success && data.track && data.track.id && !failedVideoIds.has(data.track.id)) {
-              currentTrack.id = data.track.id;
-              currentTrack.alternativeIds = data.track.alternativeIds || [];
-              currentPlayingVideoId = data.track.id;
-              saveResolvedTrack(currentTrack);
-              if (ytPlayer && ytPlayer.loadVideoById) {
-                setBuffering(true);
-                ytPlayer.loadVideoById(data.track.id);
-              }
-            } else {
-              showToast("Titre non disponible, passage au suivant...");
-              setTimeout(playNext, 1200);
+      // 2. Query resolve with exact artist, title and excluded list
+      showToast("Recherche d'une version audio libre...");
+      const excludeList = Array.from(failedVideoIds).join(',');
+      const resolveUrl = `/api/resolve?q=${encodeURIComponent((currentTrack.title || '') + ' ' + (currentTrack.artist || ''))}&title=${encodeURIComponent(currentTrack.title || '')}&artist=${encodeURIComponent(currentTrack.artist || '')}&exclude=${encodeURIComponent(excludeList)}`;
+      fetch(resolveUrl)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.track && data.track.id && !failedVideoIds.has(data.track.id)) {
+            currentTrack.id = data.track.id;
+            currentTrack.alternativeIds = data.track.alternativeIds || [];
+            currentPlayingVideoId = data.track.id;
+            saveResolvedTrack(currentTrack);
+            if (ytPlayer && ytPlayer.loadVideoById) {
+              setBuffering(true);
+              ytPlayer.loadVideoById(data.track.id);
             }
-          })
-          .catch(() => {
+          } else {
+            showToast("Titre non disponible, passage au suivant...");
             setTimeout(playNext, 1200);
-          });
+          }
+        })
+        .catch(() => {
+          setTimeout(playNext, 1200);
+        });
+    }
+
+    function onPlayerError(e) {
+      setBuffering(false);
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const failedId = currentPlayingVideoId;
+      console.warn("YouTube Player error:", e ? e.data : 'unknown', "for video:", failedId);
+      if (failedId) failedVideoIds.add(failedId);
+
+      // STEP 1: Direct stream fallback for the exact current track (bypasses YouTube embed restriction error 150/101)
+      if (currentTrack && failedId && !streamFallbackTried.has(failedId)) {
+        streamFallbackTried.add(failedId);
+        playViaDirectStream(currentTrack, 0);
         return;
       }
 
-      showToast("Titre non disponible, passage au suivant...");
-      setTimeout(playNext, 1200);
+      // STEP 2: Try validated alternatives
+      tryAlternativeTrack();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       initTheme();
+
+      // HTML5 Stream Audio Engine Event Listeners
+      const streamAudio = document.getElementById('stream-audio-player');
+      if (streamAudio) {
+        streamAudio.addEventListener('playing', () => {
+          if (activeAudioEngine === 'stream') {
+            setBuffering(false);
+            setPlayState(true);
+            startProgressTracking();
+          }
+        });
+        streamAudio.addEventListener('pause', () => {
+          if (activeAudioEngine === 'stream') {
+            setPlayState(false);
+            stopProgressTracking();
+          }
+        });
+        streamAudio.addEventListener('waiting', () => {
+          if (activeAudioEngine === 'stream') setBuffering(true);
+        });
+        streamAudio.addEventListener('ended', () => {
+          if (activeAudioEngine === 'stream') {
+            setBuffering(false);
+            stopProgressTracking();
+            onTrackEnded();
+          }
+        });
+        streamAudio.addEventListener('error', (err) => {
+          if (activeAudioEngine === 'stream') {
+            console.warn("Stream error:", err);
+            setBuffering(false);
+            tryAlternativeTrack();
+          }
+        });
+      }
       lucide.createIcons();
       updateGreeting();
       renderPlaylistsSidebar();
@@ -3110,7 +3193,7 @@
         showToast(`Recherche audio : ${track.title}...`);
         try {
           const query = `${track.title} ${track.artist}`.trim();
-          const res = await fetch(`/api/resolve?q=${encodeURIComponent(query)}`);
+          const res = await fetch(`/api/resolve?q=${encodeURIComponent(query)}&title=${encodeURIComponent(track.title || "")}&artist=${encodeURIComponent(track.artist || "")}`);
           const data = await res.json();
           if (data.success && data.track && data.track.id) {
             track.id = data.track.id;
@@ -3228,6 +3311,14 @@
       if (!track || !track.id) return;
       currentPlayingVideoId = track.id;
       setBuffering(true);
+
+      activeAudioEngine = 'youtube';
+      const streamAudio = document.getElementById('stream-audio-player');
+      if (streamAudio && !streamAudio.paused) {
+        streamAudio.pause();
+        streamAudio.removeAttribute('src');
+        streamAudio.load();
+      }
 
       const keeper = document.getElementById('ios-audio-keeper');
       if (keeper && autoplay) {
@@ -3444,6 +3535,20 @@
       }
       if (!currentPlaylist || currentPlaylist.length === 0) return;
 
+      if (activeAudioEngine === 'stream') {
+        const streamAudio = document.getElementById('stream-audio-player');
+        if (streamAudio) {
+          if (isPlaying) {
+            streamAudio.pause();
+            setPlayState(false);
+          } else {
+            streamAudio.play().catch(() => {});
+            setPlayState(true);
+          }
+        }
+        return;
+      }
+
       if (isPlaying) {
         if (ytPlayer && ytPlayer.pauseVideo) {
           try { ytPlayer.pauseVideo(); } catch(e) {}
@@ -3509,6 +3614,11 @@
         }
       }
 
+      if (!playing && activeAudioEngine === 'stream') {
+        const streamAudio = document.getElementById('stream-audio-player');
+        if (streamAudio && !streamAudio.paused) streamAudio.pause();
+      }
+
       if (amISpeaker()) {
         sendWs('UPDATE_STATE', { isPlaying: playing });
       }
@@ -3550,7 +3660,10 @@
     function onTrackEnded() {
       if (isRepeat) {
         seekTo(0);
-        if (ytPlayer && ytPlayer.playVideo) {
+        if (activeAudioEngine === 'stream') {
+          const streamAudio = document.getElementById('stream-audio-player');
+          if (streamAudio) streamAudio.play().catch(() => {});
+        } else if (ytPlayer && ytPlayer.playVideo) {
           try { ytPlayer.playVideo(); } catch(e) {}
         }
       } else {
@@ -3633,6 +3746,11 @@
       if (desktopSlider && parseFloat(desktopSlider.value) !== num) desktopSlider.value = num;
       if (mobileSlider && parseFloat(mobileSlider.value) !== num) mobileSlider.value = num;
 
+      const streamAudio = document.getElementById('stream-audio-player');
+      if (streamAudio) {
+        streamAudio.volume = Math.max(0, Math.min(1, currentVolume / 100));
+      }
+
       if (ytPlayer && ytPlayer.setVolume) {
         try {
           ytPlayer.setVolume(currentVolume);
@@ -3682,6 +3800,10 @@
     }
 
     function getCurrentPlaybackTime() {
+      if (activeAudioEngine === 'stream') {
+        const streamAudio = document.getElementById('stream-audio-player');
+        return streamAudio ? (streamAudio.currentTime || 0) : 0;
+      }
       if (ytPlayer && ytPlayer.getCurrentTime) {
         try {
           return ytPlayer.getCurrentTime() || 0;
@@ -3691,6 +3813,12 @@
     }
 
     function getPlaybackDuration() {
+      if (activeAudioEngine === 'stream') {
+        const streamAudio = document.getElementById('stream-audio-player');
+        if (streamAudio && streamAudio.duration && !isNaN(streamAudio.duration)) {
+          return streamAudio.duration;
+        }
+      }
       if (ytPlayer && ytPlayer.getDuration) {
         try {
           const d = ytPlayer.getDuration();
@@ -3705,10 +3833,17 @@
       if (isNaN(target) || target < 0) return;
       lastSyncPosition = target;
       lastSyncTimestamp = Date.now();
-      if (amISpeaker() && ytPlayer && ytPlayer.seekTo) {
-        try {
-          ytPlayer.seekTo(target, true);
-        } catch(e) {}
+      if (amISpeaker()) {
+        if (activeAudioEngine === 'stream') {
+          const streamAudio = document.getElementById('stream-audio-player');
+          if (streamAudio) {
+            try { streamAudio.currentTime = target; } catch(e) {}
+          }
+        } else if (ytPlayer && ytPlayer.seekTo) {
+          try {
+            ytPlayer.seekTo(target, true);
+          } catch(e) {}
+        }
       }
     }
 
