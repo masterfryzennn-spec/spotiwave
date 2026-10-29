@@ -12,6 +12,16 @@
   <meta name="apple-mobile-web-app-title" content="Yanis">
   <link rel="apple-touch-icon" href="/icon.svg">
   <meta name="theme-color" content="#121212">
+  <script>
+    (function() {
+      try {
+        const t = localStorage.getItem('spotiwave_theme');
+        if (t) {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Google Fonts for Yanis Brand -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,13 +37,13 @@
         extend: {
           colors: {
             spotify: {
-              green: '#1db954',
-              hover: '#1ed760',
-              dark: '#121212',
-              card: '#181818',
-              cardHover: '#282828',
-              subtext: '#b3b3b3',
-              border: '#2a2a2a'
+              green: 'var(--accent-color, #1db954)',
+              hover: 'var(--accent-hover, #1ed760)',
+              dark: 'var(--bg-base, #121212)',
+              card: 'var(--bg-card, #181818)',
+              cardHover: 'var(--bg-card-hover, #282828)',
+              subtext: 'var(--text-sub, #b3b3b3)',
+              border: 'var(--border-color, #2a2a2a)'
             }
           },
           fontFamily: {
@@ -187,14 +197,252 @@
       color: #1ed760 !important;
     }
 
+    /* ========================================= */
+    /* THEMES SYSTEM                             */
+    /* ========================================= */
+    :root {
+      --accent-color: #1db954;
+      --accent-hover: #1ed760;
+      --accent-rgb: 29, 185, 84;
+      --bg-body: #000000;
+      --bg-sidebar: #000000;
+      --bg-main-gradient: linear-gradient(to bottom, #18181b, #121212);
+      --bg-header: rgba(9, 9, 11, 0.4);
+      --bg-footer: #09090b;
+      --bg-card: #181818;
+      --bg-card-hover: #282828;
+      --text-main: #ffffff;
+      --text-sub: #b3b3b3;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    body {
+      background-color: var(--bg-body, #000000) !important;
+      color: var(--text-main, #ffffff) !important;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    #sidebar {
+      background-color: var(--bg-sidebar, #000000) !important;
+      transition: background-color 0.3s ease;
+    }
+    main {
+      background: var(--bg-main-gradient, linear-gradient(to bottom, #18181b, #121212)) !important;
+      transition: background 0.3s ease;
+    }
+    header {
+      background-color: var(--bg-header, rgba(9, 9, 11, 0.4)) !important;
+    }
+    footer {
+      background-color: var(--bg-footer, #09090b) !important;
+    }
+    .bg-\[\#181818\] {
+      background-color: var(--bg-card, #181818) !important;
+    }
+    .hover\:bg-\[\#282828\]:hover {
+      background-color: var(--bg-card-hover, #282828) !important;
+    }
+    .track-row.is-active .track-title {
+      color: var(--accent-hover, #1ed760) !important;
+    }
+
+    /* 1. VIOLET */
+    html[data-theme="violet"], body[data-theme="violet"] {
+      --accent-color: #a855f7;
+      --accent-hover: #c084fc;
+      --accent-rgb: 168, 85, 247;
+      --bg-body: #090514;
+      --bg-sidebar: #070310;
+      --bg-main-gradient: linear-gradient(to bottom, #231245, #0f0724);
+      --bg-header: rgba(15, 7, 36, 0.6);
+      --bg-footer: #0b0518;
+      --bg-card: #170d30;
+      --bg-card-hover: #26164e;
+      --text-main: #ffffff;
+      --text-sub: #c4b5fd;
+      --border-color: rgba(168, 85, 247, 0.2);
+    }
+
+    /* 2. ROUGE */
+    html[data-theme="rouge"], body[data-theme="rouge"] {
+      --accent-color: #ef4444;
+      --accent-hover: #f87171;
+      --accent-rgb: 239, 68, 68;
+      --bg-body: #100404;
+      --bg-sidebar: #0a0202;
+      --bg-main-gradient: linear-gradient(to bottom, #3b0d0d, #140505);
+      --bg-header: rgba(20, 5, 5, 0.6);
+      --bg-footer: #0e0303;
+      --bg-card: #1f0b0b;
+      --bg-card-hover: #331313;
+      --text-main: #ffffff;
+      --text-sub: #fca5a5;
+      --border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* 3. BLEU CIEL */
+    html[data-theme="bleu-ciel"], body[data-theme="bleu-ciel"] {
+      --accent-color: #0ea5e9;
+      --accent-hover: #38bdf8;
+      --accent-rgb: 14, 165, 233;
+      --bg-body: #030d17;
+      --bg-sidebar: #020810;
+      --bg-main-gradient: linear-gradient(to bottom, #07263e, #041423);
+      --bg-header: rgba(4, 20, 35, 0.6);
+      --bg-footer: #030f1c;
+      --bg-card: #081e33;
+      --bg-card-hover: #0e3052;
+      --text-main: #ffffff;
+      --text-sub: #7dd3fc;
+      --border-color: rgba(14, 165, 233, 0.2);
+    }
+
+    /* 4. BLEU FONCÉ */
+    html[data-theme="bleu-fonce"], body[data-theme="bleu-fonce"] {
+      --accent-color: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-rgb: 59, 130, 246;
+      --bg-body: #050917;
+      --bg-sidebar: #030510;
+      --bg-main-gradient: linear-gradient(to bottom, #0e1e4a, #070d24);
+      --bg-header: rgba(7, 13, 36, 0.6);
+      --bg-footer: #050a1c;
+      --bg-card: #0d173b;
+      --bg-card-hover: #162459;
+      --text-main: #ffffff;
+      --text-sub: #93c5fd;
+      --border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    /* 5. GRIS */
+    html[data-theme="gris"], body[data-theme="gris"] {
+      --accent-color: #94a3b8;
+      --accent-hover: #cbd5e1;
+      --accent-rgb: 148, 163, 184;
+      --bg-body: #111215;
+      --bg-sidebar: #0c0d0f;
+      --bg-main-gradient: linear-gradient(to bottom, #23262d, #16181d);
+      --bg-header: rgba(22, 24, 29, 0.6);
+      --bg-footer: #121316;
+      --bg-card: #1e2127;
+      --bg-card-hover: #2b2f38;
+      --text-main: #ffffff;
+      --text-sub: #94a3b8;
+      --border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    /* 6. NOIR (OLED Pur) */
+    html[data-theme="noir"], body[data-theme="noir"] {
+      --accent-color: #22c55e;
+      --accent-hover: #4ade80;
+      --accent-rgb: 34, 197, 94;
+      --bg-body: #000000;
+      --bg-sidebar: #000000;
+      --bg-main-gradient: linear-gradient(to bottom, #080808, #000000);
+      --bg-header: rgba(0, 0, 0, 0.85);
+      --bg-footer: #000000;
+      --bg-card: #080808;
+      --bg-card-hover: #141414;
+      --text-main: #ffffff;
+      --text-sub: #737373;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* 7. BLANC (Mode Clair) */
+    html[data-theme="blanc"], body[data-theme="blanc"] {
+      --accent-color: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-rgb: 37, 99, 235;
+      --bg-body: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-main-gradient: linear-gradient(to bottom, #f1f5f9, #ffffff);
+      --bg-header: rgba(255, 255, 255, 0.85);
+      --bg-footer: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --border-color: rgba(0, 0, 0, 0.08);
+    }
+    body[data-theme="blanc"] {
+      color: #0f172a !important;
+    }
+    body[data-theme="blanc"] h1,
+    body[data-theme="blanc"] h2,
+    body[data-theme="blanc"] h3,
+    body[data-theme="blanc"] h4,
+    body[data-theme="blanc"] p.text-white,
+    body[data-theme="blanc"] span.text-white,
+    body[data-theme="blanc"] div.text-white {
+      color: #0f172a !important;
+    }
+    body[data-theme="blanc"] .text-zinc-400,
+    body[data-theme="blanc"] .text-spotify-subtext {
+      color: #64748b !important;
+    }
+    body[data-theme="blanc"] #global-search-input {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    body[data-theme="blanc"] footer {
+      border-top-color: #e2e8f0 !important;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05) !important;
+    }
+    body[data-theme="blanc"] .border-white\/5,
+    body[data-theme="blanc"] .border-white\/10 {
+      border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    body[data-theme="blanc"] .bg-zinc-800,
+    body[data-theme="blanc"] .bg-zinc-900 {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+    body[data-theme="blanc"] .bg-white\/10 {
+      background-color: rgba(0, 0, 0, 0.05) !important;
+      color: #0f172a !important;
+    }
+    body[data-theme="blanc"] .bg-white\/10:hover {
+      background-color: rgba(0, 0, 0, 0.1) !important;
+    }
+    body[data-theme="blanc"] .bg-zinc-800\/60,
+    body[data-theme="blanc"] .bg-zinc-800\/50 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    }
+    body[data-theme="blanc"] #play-pause-btn {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+    }
+    body[data-theme="blanc"] #play-pause-btn svg {
+      fill: #ffffff !important;
+    }
+
+    /* 8. VERT (Default) */
+    html[data-theme="vert"], body[data-theme="vert"] {
+      --accent-color: #1db954;
+      --accent-hover: #1ed760;
+      --accent-rgb: 29, 185, 84;
+      --bg-body: #000000;
+      --bg-sidebar: #000000;
+      --bg-main-gradient: linear-gradient(to bottom, #18181b, #121212);
+      --bg-header: rgba(9, 9, 11, 0.4);
+      --bg-footer: #09090b;
+      --bg-card: #181818;
+      --bg-card-hover: #282828;
+      --text-main: #ffffff;
+      --text-sub: #b3b3b3;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
     .brand-yanis {
       font-family: 'Righteous', 'Syne', sans-serif;
       letter-spacing: 0.05em;
-      background: linear-gradient(135deg, #ffffff 30%, #1ed760 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      background: linear-gradient(135deg, var(--text-main, #ffffff) 30%, var(--accent-color, #1ed760) 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
       display: inline-block;
-      text-shadow: 0 0 24px rgba(30, 215, 96, 0.25);
+      text-shadow: 0 0 24px rgba(var(--accent-rgb, 29, 185, 84), 0.35);
     }
 
     /* Spotify Karaoke Lyrics Styling */
@@ -255,6 +503,10 @@
         <button onclick="switchTab('search')" id="nav-btn-search" class="w-full flex items-center gap-4 px-3 py-2 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50">
           <i data-lucide="search" class="w-5 h-5"></i>
           <span>Recherche</span>
+        </button>
+        <button onclick="openThemeModal()" id="nav-btn-theme" class="w-full flex items-center gap-4 px-3 py-2 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50 cursor-pointer">
+          <i data-lucide="palette" class="w-5 h-5 text-spotify-green"></i>
+          <span>Thèmes</span>
         </button>
       </nav>
 
@@ -319,6 +571,12 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- Button Themes in Header -->
+          <button onclick="openThemeModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition cursor-pointer" title="Changer le thème">
+            <i data-lucide="palette" class="w-3.5 h-3.5 text-spotify-green"></i>
+            <span class="hidden sm:inline">Thèmes</span>
+          </button>
+
           <!-- Button Import Spotify in Header -->
           <button onclick="openSpotifyImportModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-spotify-green/10 hover:bg-spotify-green/20 text-xs font-bold text-spotify-green border border-spotify-green/30 transition cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -720,6 +978,10 @@
       <i data-lucide="library" class="w-5 h-5"></i>
       <span>Bibliothèque</span>
     </button>
+    <button onclick="openThemeModal()" class="flex flex-col items-center text-xs text-spotify-subtext hover:text-white gap-1">
+      <i data-lucide="palette" class="w-5 h-5 text-spotify-green"></i>
+      <span>Thèmes</span>
+    </button>
   </nav>
 
   <!-- FULLSCREEN PLAYER MODAL (iOS Style) -->
@@ -916,6 +1178,102 @@
           <span>Importer</span>
           <i data-lucide="loader" id="spotify-import-spinner" class="w-3.5 h-3.5 animate-spin hidden"></i>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THÈMES PERSONNALISÉS -->
+  <div id="theme-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeThemeModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-spotify-green/20 flex items-center justify-center text-spotify-green">
+            <i data-lucide="palette" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Thèmes de couleur</h3>
+            <p class="text-xs text-zinc-400">Choisissez votre ambiance personnalisée</p>
+          </div>
+        </div>
+        <button onclick="closeThemeModal()" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer">✕</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-1" id="theme-cards-grid">
+        <!-- 1. Vert Spotify -->
+        <button onclick="selectTheme('vert')" data-theme-card="vert" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-[#1db954] shadow-[0_0_12px_rgba(29,185,84,0.4)] flex-shrink-0 flex items-center justify-center text-black font-bold text-xs">✓</span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-spotify-green transition">Vert Spotify</div>
+            <div class="text-[10px] text-zinc-400">Classique original</div>
+          </div>
+        </button>
+
+        <!-- 2. Violet -->
+        <button onclick="selectTheme('violet')" data-theme-card="violet" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#9333ea] to-[#c084fc] shadow-[0_0_12px_rgba(168,85,247,0.4)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-purple-400 transition">Violet</div>
+            <div class="text-[10px] text-zinc-400">Améthyste vibrant</div>
+          </div>
+        </button>
+
+        <!-- 3. Rouge -->
+        <button onclick="selectTheme('rouge')" data-theme-card="rouge" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#dc2626] to-[#f87171] shadow-[0_0_12px_rgba(239,68,68,0.4)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-red-400 transition">Rouge</div>
+            <div class="text-[10px] text-zinc-400">Rubis passion</div>
+          </div>
+        </button>
+
+        <!-- 4. Bleu Ciel -->
+        <button onclick="selectTheme('bleu-ciel')" data-theme-card="bleu-ciel" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0284c7] to-[#38bdf8] shadow-[0_0_12px_rgba(14,165,233,0.4)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-sky-400 transition">Bleu ciel</div>
+            <div class="text-[10px] text-zinc-400">Cyan lagon</div>
+          </div>
+        </button>
+
+        <!-- 5. Bleu Foncé -->
+        <button onclick="selectTheme('bleu-fonce')" data-theme-card="bleu-fonce" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#1d4ed8] to-[#60a5fa] shadow-[0_0_12px_rgba(59,130,246,0.4)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-blue-400 transition">Bleu Foncé</div>
+            <div class="text-[10px] text-zinc-400">Nuit abyssale</div>
+          </div>
+        </button>
+
+        <!-- 6. Gris -->
+        <button onclick="selectTheme('gris')" data-theme-card="gris" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#475569] to-[#94a3b8] shadow-[0_0_12px_rgba(148,163,184,0.4)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-slate-300 transition">Gris</div>
+            <div class="text-[10px] text-zinc-400">Graphite titane</div>
+          </div>
+        </button>
+
+        <!-- 7. Noir OLED -->
+        <button onclick="selectTheme('noir')" data-theme-card="noir" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-black border border-white/30 shadow-[0_0_12px_rgba(0,0,0,0.8)] flex-shrink-0 flex items-center justify-center text-white font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-emerald-400 transition">Noir</div>
+            <div class="text-[10px] text-zinc-400">OLED Pur</div>
+          </div>
+        </button>
+
+        <!-- 8. Blanc (Clair) -->
+        <button onclick="selectTheme('blanc')" data-theme-card="blanc" class="theme-option-card flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-zinc-800/60 hover:bg-zinc-800 transition text-left cursor-pointer group">
+          <span class="w-7 h-7 rounded-full bg-white border border-black/20 shadow-[0_0_12px_rgba(255,255,255,0.4)] flex-shrink-0 flex items-center justify-center text-blue-600 font-bold text-xs"></span>
+          <div class="flex-1 truncate">
+            <div class="text-xs font-bold text-white group-hover:text-blue-500 transition">Blanc</div>
+            <div class="text-[10px] text-zinc-400">Mode Clair épuré</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="pt-2 text-center text-[11px] text-zinc-500">
+        Votre préférence est enregistrée automatiquement sur votre appareil.
       </div>
     </div>
   </div>
@@ -1203,6 +1561,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
       lucide.createIcons();
       updateGreeting();
       renderPlaylistsSidebar();
@@ -3872,6 +4231,78 @@
         document.getElementById('section-electro').classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+    }
+
+    /* THEME MANAGEMENT */
+    const SPOTIWAVE_THEMES = {
+      vert: { name: 'Vert Spotify', color: '#1db954', meta: '#121212' },
+      violet: { name: 'Violet', color: '#a855f7', meta: '#090514' },
+      rouge: { name: 'Rouge', color: '#ef4444', meta: '#100404' },
+      'bleu-ciel': { name: 'Bleu ciel', color: '#0ea5e9', meta: '#030d17' },
+      'bleu-fonce': { name: 'Bleu Foncé', color: '#3b82f6', meta: '#050917' },
+      gris: { name: 'Gris', color: '#94a3b8', meta: '#111215' },
+      noir: { name: 'Noir OLED', color: '#22c55e', meta: '#000000' },
+      blanc: { name: 'Blanc', color: '#2563eb', meta: '#ffffff' }
+    };
+
+    function openThemeModal() {
+      const current = localStorage.getItem('spotiwave_theme') || 'vert';
+      updateThemeCardsUI(current);
+      const modal = document.getElementById('theme-modal');
+      if (modal) modal.classList.remove('hidden');
+      refreshIcons();
+    }
+
+    function closeThemeModal() {
+      const modal = document.getElementById('theme-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function selectTheme(themeId) {
+      if (!SPOTIWAVE_THEMES[themeId]) themeId = 'vert';
+      localStorage.setItem('spotiwave_theme', themeId);
+      applyTheme(themeId);
+      updateThemeCardsUI(themeId);
+      showToast(`Thème activé : ${SPOTIWAVE_THEMES[themeId].name}`);
+    }
+
+    function applyTheme(themeId) {
+      if (!themeId || !SPOTIWAVE_THEMES[themeId]) themeId = 'vert';
+      document.documentElement.setAttribute('data-theme', themeId);
+      if (document.body) {
+        document.body.setAttribute('data-theme', themeId);
+      }
+      
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme && SPOTIWAVE_THEMES[themeId]) {
+        metaTheme.setAttribute('content', SPOTIWAVE_THEMES[themeId].meta);
+      }
+    }
+
+    function updateThemeCardsUI(activeTheme) {
+      document.querySelectorAll('#theme-cards-grid .theme-option-card').forEach(card => {
+        const t = card.getAttribute('data-theme-card');
+        const badge = card.querySelector('span');
+        if (t === activeTheme) {
+          card.classList.add('ring-2', 'ring-spotify-green', 'border-transparent', 'bg-zinc-800');
+          card.classList.remove('border-white/10');
+          if (badge) {
+            badge.innerText = '✓';
+            badge.classList.remove('text-transparent');
+          }
+        } else {
+          card.classList.remove('ring-2', 'ring-spotify-green', 'border-transparent', 'bg-zinc-800');
+          card.classList.add('border-white/10');
+          if (badge) {
+            badge.innerText = '';
+          }
+        }
+      });
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('spotiwave_theme') || 'vert';
+      applyTheme(savedTheme);
     }
   </script>
 </body>
