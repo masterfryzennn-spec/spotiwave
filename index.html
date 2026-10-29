@@ -2233,14 +2233,12 @@
       `;
 
       userPlaylists.forEach(pl => {
-        const isSpotify = pl.type === 'spotify';
         html += `
           <div onclick="viewPlaylist('${pl.id}')" class="group flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 cursor-pointer transition ${activeViewingPlaylistId === pl.id ? 'bg-white/15' : ''}">
             <img src="${pl.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded-md object-cover flex-shrink-0 border border-white/5 shadow" alt="Cover">
             <div class="overflow-hidden flex-1">
               <p class="text-xs font-bold text-white line-clamp-1 flex items-center gap-1.5">
                 <span>${pl.title}</span>
-                ${isSpotify ? '<span class="text-[9px] px-1 py-0.2 rounded bg-spotify-green text-black font-black uppercase">Spotify</span>' : ''}
               </p>
               <p class="text-[10px] text-zinc-400">${pl.tracks ? pl.tracks.length : 0} titres</p>
             </div>
@@ -2343,7 +2341,7 @@
       document.getElementById('search-results-section').classList.add('hidden');
 
       document.getElementById('detail-playlist-title').innerText = pl.title;
-      document.getElementById('detail-playlist-badge').innerText = pl.type === 'spotify' ? "Importé de Spotify" : "Playlist Personnelle";
+      document.getElementById('detail-playlist-badge').innerText = 'Playlist';
       document.getElementById('detail-playlist-cover').src = getHighResCover(pl.cover);
       document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(pl.tracks || []);
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
