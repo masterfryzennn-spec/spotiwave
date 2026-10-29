@@ -505,6 +505,66 @@
   </style>
 </head>
 <body class="bg-black text-white h-screen flex flex-col overflow-hidden font-sans select-none">
+  <!-- TOP-LEVEL PORTAL: HEADER DROPDOWN BACKDROP & MENU (immune to stacking context / backdrop-filter traps) -->
+  <div id="header-dropdown-backdrop" class="hidden fixed inset-0 bg-black/80 z-[9998] transition-opacity" onclick="closeHeaderMenu()"></div>
+
+  <div id="header-dropdown-menu" style="background-color: #18181b !important;" class="hidden fixed top-16 right-3 sm:right-8 w-64 bg-[#18181b] border border-white/20 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.98)] p-2 z-[9999] text-xs space-y-1 select-none">
+    <button onclick="closeHeaderMenu(); openThemeModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="palette" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Thèmes de couleur</div>
+        <div class="text-[10px] text-zinc-400">Violet, Rouge, Bleu, Noir...</div>
+      </div>
+    </button>
+    <button onclick="closeHeaderMenu(); openSpotifyImportModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-spotify-green/20 text-spotify-green flex items-center justify-center flex-shrink-0">
+        <i data-lucide="download" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Importer Spotify</div>
+        <div class="text-[10px] text-zinc-400">Lien de playlist complet</div>
+      </div>
+    </button>
+    <button onclick="closeHeaderMenu(); openEnterShareLinkModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="link" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Rejoindre une playlist</div>
+        <div class="text-[10px] text-zinc-400">Ouvrir un lien ou code partagé</div>
+      </div>
+    </button>
+    <button onclick="closeHeaderMenu(); showInstallGuide()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="smartphone" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Installer sur iPhone</div>
+        <div class="text-[10px] text-zinc-400">Ajouter à l'écran d'accueil</div>
+      </div>
+    </button>
+    <button onclick="closeHeaderMenu(); openConnectModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="cast" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Connect Direct</div>
+        <div class="text-[10px] text-zinc-400">Contrôle distant et Jam</div>
+      </div>
+    </button>
+    <button onclick="closeHeaderMenu(); toggleCompactMode()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+      <div class="w-7 h-7 rounded-lg bg-zinc-700/50 text-zinc-300 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="minimize-2" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white">Mode Allégé</div>
+        <div class="text-[10px] text-zinc-400">Mini-lecteur épuré</div>
+      </div>
+    </button>
+  </div>
+
 
   <!-- INVISIBLE YOUTUBE AUDIO ENGINE & IOS AUDIO SESSION KEEPER -->
   <div style="position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; pointer-events: none; opacity: 0.01; z-index: -1;">
@@ -618,66 +678,7 @@
               <i data-lucide="more-horizontal" class="w-5 h-5"></i>
             </button>
 
-            <!-- BACKDROP FOR MOBILE DROPDOWN -->
-            <div id="header-dropdown-backdrop" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-40 transition-opacity" onclick="closeHeaderMenu()"></div>
 
-            <!-- DROPDOWN MENU SHEET (Solid Opaque, No Screen Bleed-Through) -->
-            <div id="header-dropdown-menu" style="background-color: #18181b !important;" class="hidden absolute right-0 top-12 w-64 bg-[#18181b] border border-white/20 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-2 z-50 text-xs space-y-1">
-              <button onclick="closeHeaderMenu(); openThemeModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="palette" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Thèmes de couleur</div>
-                  <div class="text-[10px] text-zinc-400">Violet, Rouge, Bleu, Noir...</div>
-                </div>
-              </button>
-              <button onclick="closeHeaderMenu(); openSpotifyImportModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-spotify-green/20 text-spotify-green flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="download" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Importer Spotify</div>
-                  <div class="text-[10px] text-zinc-400">Lien de playlist complet</div>
-                </div>
-              </button>
-              <button onclick="closeHeaderMenu(); openEnterShareLinkModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="link" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Rejoindre une playlist</div>
-                  <div class="text-[10px] text-zinc-400">Ouvrir un lien ou code partagé</div>
-                </div>
-              </button>
-              <button onclick="closeHeaderMenu(); showInstallGuide()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="smartphone" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Installer sur iPhone</div>
-                  <div class="text-[10px] text-zinc-400">Ajouter à l'écran d'accueil</div>
-                </div>
-              </button>
-              <button onclick="closeHeaderMenu(); openConnectModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="cast" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Connect Direct</div>
-                  <div class="text-[10px] text-zinc-400">Contrôle distant et Jam</div>
-                </div>
-              </button>
-              <button onclick="closeHeaderMenu(); toggleCompactMode()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
-                <div class="w-7 h-7 rounded-lg bg-zinc-700/50 text-zinc-300 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="minimize-2" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1">
-                  <div class="font-semibold text-white">Mode Allégé</div>
-                  <div class="text-[10px] text-zinc-400">Mini-lecteur épuré</div>
-                </div>
-              </button>
-            </div>
           </div>
         </div>
       </header>
@@ -3312,6 +3313,26 @@
       currentPlayingVideoId = track.id;
       setBuffering(true);
 
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+      // On Android and mobile browsers: use HTML5 audio stream directly so audio NEVER pauses when browser is closed or screen is locked
+      if (isMobile) {
+        if (autoplay) {
+          playViaDirectStream(track, 0);
+        } else {
+          activeAudioEngine = 'stream';
+          const streamAudio = document.getElementById('stream-audio-player');
+          if (streamAudio) {
+            streamAudio.src = `/api/stream/${track.id}`;
+            streamAudio.preload = "auto";
+          }
+          setPlayState(false);
+          setBuffering(false);
+        }
+        return;
+      }
+
+      // On desktop: use YouTube IFrame with automatic stream fallback on any error
       activeAudioEngine = 'youtube';
       const streamAudio = document.getElementById('stream-audio-player');
       if (streamAudio && !streamAudio.paused) {
@@ -3336,7 +3357,7 @@
           }
         } catch (e) {
           console.warn("Direct play error:", e);
-          setBuffering(false);
+          playViaDirectStream(track, 0);
         }
       } else {
         pendingTrack = track;
