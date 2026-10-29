@@ -447,51 +447,142 @@
         </section>
 
         <!-- WELCOME SECTION -->
-        <section id="home-default-section">
-          <div class="flex items-center justify-between mb-4">
-            <h1 id="greeting-text" class="text-2xl md:text-3xl font-extrabold tracking-tight">Bonne écoute</h1>
-            <span class="text-xs px-2.5 py-1 rounded-full bg-spotify-green/10 text-spotify-green border border-spotify-green/20 font-semibold flex items-center gap-1.5">
+        <section id="home-default-section" class="space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 id="greeting-text" class="text-2xl md:text-4xl font-extrabold tracking-tight text-white">Bonne écoute</h1>
+              <p class="text-xs md:text-sm text-zinc-400 font-medium mt-1">Vos hits et vos recommandations en streaming illimité</p>
+            </div>
+            <span class="text-xs px-3 py-1.5 rounded-full bg-spotify-green/10 text-spotify-green border border-spotify-green/20 font-semibold flex items-center gap-1.5 shadow-sm">
               <span class="w-2 h-2 rounded-full bg-spotify-green animate-pulse"></span>
-              Flux Live 0 Pub
+              Flux Haute Définition
             </span>
           </div>
           
+          <!-- SPOTLIGHT HERO BANNER (À LA UNE) -->
+          <div id="home-spotlight-hero" class="hidden"></div>
+
           <!-- QUICK PICKS GRID -->
-          <div id="quick-picks-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
+          <div id="quick-picks-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-3"></div>
+        </section>
+
+        <!-- SECTION: RÉCEMMENT ÉCOUTÉS -->
+        <section id="section-history" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">Récemment écoutés</h2>
+              <p class="text-xs text-zinc-400 font-medium">Reprenez là où vous vous êtes arrêté</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="clearHistory()" class="text-xs text-zinc-400 hover:text-red-400 px-2.5 py-1 rounded hover:bg-white/5 transition mr-1 font-medium cursor-pointer">Effacer</button>
+              <button onclick="scrollCarousel('history-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('history-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+          <div id="history-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
+        </section>
+
+        <!-- SECTION: ARTISTES DU MOMENT -->
+        <section id="section-artists" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">Artistes populaires</h2>
+              <p class="text-xs text-zinc-400 font-medium">Les artistes les plus écoutés en direct</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="scrollCarousel('artists-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('artists-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+          <div id="artists-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
         </section>
 
         <!-- TENDANCES FRANCE EN DIRECT -->
-        <section id="section-trending">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">🔥 Tendances Actuelles en Direct</h2>
-            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Mis à jour aujourd'hui</span>
+        <section id="section-trending" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">🔥 Tendances Actuelles en Direct</h2>
+              <p class="text-xs text-zinc-400 font-medium">Les morceaux qui buzzent en ce moment</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleSectionDisplay('trending')" id="toggle-view-trending" class="text-xs font-bold text-zinc-400 hover:text-white px-2.5 py-1 rounded hover:bg-white/5 transition mr-1 cursor-pointer">Tout afficher</button>
+              <button onclick="scrollCarousel('trending-tracks-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('trending-tracks-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
-          <div id="trending-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="trending-tracks-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
         </section>
 
         <!-- TOP 50 HITS -->
-        <section id="section-top50">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">🏆 Top 50 Musique</h2>
-            <span class="text-xs text-spotify-subtext font-semibold uppercase tracking-wider">Les plus écoutés</span>
+        <section id="section-top50" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">🏆 Top 50 Musique</h2>
+              <p class="text-xs text-zinc-400 font-medium">Le classement officiel des plus grands succès</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleSectionDisplay('top50')" id="toggle-view-top50" class="text-xs font-bold text-zinc-400 hover:text-white px-2.5 py-1 rounded hover:bg-white/5 transition mr-1 cursor-pointer">Tout afficher</button>
+              <button onclick="scrollCarousel('top50-tracks-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('top50-tracks-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
-          <div id="top50-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="top50-tracks-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
         </section>
 
         <!-- RAP FR -->
-        <section id="section-rap">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">🎤 Rap & Hip-Hop Français</h2>
+        <section id="section-rap" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">🎤 Rap & Hip-Hop Français</h2>
+              <p class="text-xs text-zinc-400 font-medium">Les meilleurs flows et punchlines urbaines</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleSectionDisplay('rap')" id="toggle-view-rap" class="text-xs font-bold text-zinc-400 hover:text-white px-2.5 py-1 rounded hover:bg-white/5 transition mr-1 cursor-pointer">Tout afficher</button>
+              <button onclick="scrollCarousel('rap-tracks-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('rap-tracks-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
-          <div id="rap-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="rap-tracks-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
         </section>
 
         <!-- ELECTRO & POP -->
-        <section id="section-electro">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold tracking-tight">⚡ Pop & Electro Hits</h2>
+        <section id="section-electro" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold tracking-tight text-white hover:underline cursor-pointer">⚡ Pop & Electro Hits</h2>
+              <p class="text-xs text-zinc-400 font-medium">Refrains pop solaires et basses électro</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleSectionDisplay('electro')" id="toggle-view-electro" class="text-xs font-bold text-zinc-400 hover:text-white px-2.5 py-1 rounded hover:bg-white/5 transition mr-1 cursor-pointer">Tout afficher</button>
+              <button onclick="scrollCarousel('electro-tracks-carousel', -1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="scrollCarousel('electro-tracks-carousel', 1)" class="w-8 h-8 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center transition border border-white/5 active:scale-95 shadow cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
-          <div id="electro-tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+          <div id="electro-tracks-carousel" class="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1"></div>
         </section>
 
       </div>
@@ -1143,75 +1234,259 @@
       }
     }
 
-    function showSkeletons() {
-      const skeletonHTML = Array(5).fill(0).map(() => `
-        <div class="bg-spotify-card p-3 rounded-lg flex flex-col border border-white/5 animate-pulse">
-          <div class="w-full aspect-square bg-zinc-800 rounded-md mb-3"></div>
-          <div class="h-3.5 bg-zinc-800 rounded w-3/4 mb-2"></div>
-          <div class="h-2.5 bg-zinc-800 rounded w-1/2"></div>
-        </div>
-      `).join('');
-      
-      document.getElementById('trending-tracks-grid').innerHTML = skeletonHTML;
-      document.getElementById('top50-tracks-grid').innerHTML = skeletonHTML;
-      document.getElementById('rap-tracks-grid').innerHTML = skeletonHTML;
-      document.getElementById('electro-tracks-grid').innerHTML = skeletonHTML;
+    function updateGreeting() {
+      const greetingEl = document.getElementById('greeting-text');
+      if (!greetingEl) return;
+      const hour = new Date().getHours();
+      let greet = "Bonsoir";
+      if (hour >= 5 && hour < 12) greet = "Bonjour";
+      else if (hour >= 12 && hour < 18) greet = "Bon après-midi";
+      greetingEl.textContent = greet;
     }
 
-    function renderAllFeeds() {
-      if (!liveFeedData) return;
+    function scrollCarousel(id, direction) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const scrollAmount = Math.max(el.clientWidth * 0.75, 280);
+      el.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+    }
 
-      const quickPicks = [...(liveFeedData.trending || []), ...(liveFeedData.top50 || [])].slice(0, 6);
-      document.getElementById('quick-picks-grid').innerHTML = quickPicks.map((t) => {
+    const sectionDisplayModes = {};
+    function toggleSectionDisplay(key) {
+      const isExpanded = !sectionDisplayModes[key];
+      sectionDisplayModes[key] = isExpanded;
+      const carousel = document.getElementById(`${key}-tracks-carousel`);
+      const btn = document.getElementById(`toggle-view-${key}`);
+      if (!carousel || !btn) return;
+
+      const tracks = liveFeedData ? (liveFeedData[key] || []) : [];
+      if (isExpanded) {
+        carousel.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pt-1";
+        carousel.innerHTML = tracks.map(t => renderTrackCard(t, false)).join('');
+        btn.textContent = "Réduire";
+      } else {
+        carousel.className = "flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1";
+        carousel.innerHTML = tracks.map(t => renderTrackCard(t, true)).join('');
+        btn.textContent = "Tout afficher";
+      }
+      refreshIcons();
+    }
+
+    function recordTrackToHistory(track) {
+      if (!track || !track.title) return;
+      try {
+        let history = JSON.parse(localStorage.getItem('spotiwave_history') || '[]');
+        const targetTitle = (track.title || '').trim().toLowerCase();
+        history = history.filter(t => (t.id && t.id !== track.id) && ((t.title || '').trim().toLowerCase() !== targetTitle));
+        history.unshift(track);
+        if (history.length > 20) history = history.slice(0, 20);
+        localStorage.setItem('spotiwave_history', JSON.stringify(history));
+        renderHistoryShelf();
+      } catch(e) {}
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('spotiwave_history');
+      renderHistoryShelf();
+      showToast("Historique d'écoute effacé");
+    }
+
+    function renderHistoryShelf() {
+      const shelf = document.getElementById('section-history');
+      const carousel = document.getElementById('history-carousel');
+      if (!shelf || !carousel) return;
+      try {
+        const history = JSON.parse(localStorage.getItem('spotiwave_history') || '[]');
+        if (!history || history.length === 0) {
+          shelf.classList.add('hidden');
+          return;
+        }
+        shelf.classList.remove('hidden');
+        carousel.innerHTML = history.map(t => renderTrackCard(t, true)).join('');
+        refreshIcons();
+      } catch(e) {
+        shelf.classList.add('hidden');
+      }
+    }
+
+    function renderArtistsShelf() {
+      const container = document.getElementById('artists-carousel');
+      if (!container || !liveFeedData) return;
+      const allTracks = [
+        ...(liveFeedData.trending || []),
+        ...(liveFeedData.top50 || []),
+        ...(liveFeedData.rap || []),
+        ...(liveFeedData.electro || [])
+      ];
+
+      const artistMap = new Map();
+      allTracks.forEach(t => {
+        if (t.artist && !artistMap.has(t.artist)) {
+          artistMap.set(t.artist, t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200&h=200&fit=crop');
+        }
+      });
+
+      const topArtists = Array.from(artistMap.entries()).slice(0, 12);
+      container.innerHTML = topArtists.map(([artist, cover]) => {
+        const safeArtist = artist.replace(/'/g, "\\'");
+        return `
+        <div onclick="viewArtistByName('${safeArtist}')" class="flex-shrink-0 w-32 sm:w-36 md:w-40 bg-[#181818] hover:bg-[#282828] p-3 rounded-xl transition-all duration-300 group cursor-pointer border border-white/5 text-center flex flex-col items-center shadow-lg hover:shadow-2xl">
+          <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.6)] bg-zinc-800">
+            <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${artist}" loading="lazy">
+            <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
+            <div class="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-spotify-green text-black flex items-center justify-center opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 shadow-lg transition">
+              <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </div>
+          </div>
+          <p class="text-sm font-bold text-white line-clamp-1 group-hover:underline w-full">${artist}</p>
+          <p class="text-xs text-zinc-400 mt-0.5 font-medium">Artiste</p>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function renderHeroBanner(featuredTrack) {
+      const container = document.getElementById('home-spotlight-hero');
+      if (!container || !featuredTrack) return;
+      const encoded = JSON.stringify(featuredTrack).replace(/"/g, '&quot;');
+      const isLiked = isTrackLiked(featuredTrack);
+
+      container.innerHTML = `
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-zinc-950 p-5 sm:p-7 border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-6 group">
+          <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-xl overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8)] flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 bg-zinc-900">
+            <img src="${featuredTrack.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&h=400&fit=crop'}" class="w-full h-full object-cover" alt="${featuredTrack.title}">
+          </div>
+
+          <div class="flex-1 text-center md:text-left space-y-2.5 z-10">
+            <div class="flex items-center justify-center md:justify-start gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-spotify-green/20 text-spotify-green border border-spotify-green/30 text-[11px] font-black uppercase tracking-wider">
+                ✨ À la une • N°1
+              </span>
+              <span class="text-xs text-zinc-400 font-semibold">• Hit du Moment</span>
+            </div>
+            <h2 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight line-clamp-2">${featuredTrack.title}</h2>
+            <p onclick="viewArtistByName('${(featuredTrack.artist || '').replace(/'/g, "\\'")}')" class="text-sm sm:text-base font-semibold text-zinc-300 hover:text-white hover:underline cursor-pointer inline-block">${featuredTrack.artist}</p>
+            
+            <div class="flex items-center justify-center md:justify-start gap-3 pt-2">
+              <button onclick="playRealTrack(${encoded})" class="px-6 py-2.5 rounded-full bg-spotify-green hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black font-extrabold text-sm flex items-center gap-2 shadow-xl transition cursor-pointer">
+                <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                <span>Écouter</span>
+              </button>
+              <button onclick="toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
+                <i data-lucide="heart" class="w-5 h-5 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
+              </button>
+              <button onclick="openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      container.classList.remove('hidden');
+    }
+
+    function renderQuickPicks() {
+      const container = document.getElementById('quick-picks-grid');
+      if (!container || !liveFeedData) return;
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+
+      const picks = [...(liveFeedData.trending || []), ...(liveFeedData.top50 || [])].slice(0, 6);
+      container.innerHTML = picks.map(t => {
+        const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
         const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
         return `
-        <div onclick="playRealTrack(${encoded})" class="group flex items-center bg-zinc-800/50 hover:bg-zinc-700/60 transition-colors duration-200 rounded-md overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md">
-          <img src="${t.cover}" class="w-14 h-14 md:w-16 md:h-16 object-cover flex-shrink-0 shadow-md" alt="${t.title}" loading="lazy">
-          <span class="text-xs md:text-sm font-bold text-white px-3 flex-1 line-clamp-2">${t.title}</span>
-          <div class="w-9 h-9 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex-shrink-0">
+        <div onclick="playRealTrack(${encoded})" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-200 rounded-lg overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md relative ${isCurrent ? 'ring-1 ring-spotify-green/60' : ''}">
+          <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-14 h-14 md:w-16 md:h-16 object-cover flex-shrink-0 shadow-md" alt="${t.title}" loading="lazy">
+          <div class="flex-1 px-3 min-w-0">
+            <p class="text-xs md:text-sm font-bold text-white line-clamp-1 group-hover:underline ${isCurrent ? 'text-spotify-green' : ''}">${t.title}</p>
+            <p class="text-[11px] text-zinc-400 line-clamp-1 font-medium mt-0.5">${t.artist}</p>
+          </div>
+          <div class="quick-pick-eq ${isCurrent ? '' : 'hidden'} flex items-end gap-0.5 h-3.5 mr-2">
+            <span class="w-1 bg-spotify-green h-full rounded-full animate-pulse"></span>
+            <span class="w-1 bg-spotify-green h-2/3 rounded-full animate-pulse" style="animation-delay: 150ms;"></span>
+            <span class="w-1 bg-spotify-green h-4/5 rounded-full animate-pulse" style="animation-delay: 300ms;"></span>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-spotify-green flex items-center justify-center text-black opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all shadow-xl flex-shrink-0">
             <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           </div>
         </div>
       `;
       }).join('');
+    }
 
-      renderTrackGrid('trending-tracks-grid', liveFeedData.trending || []);
-      renderTrackGrid('top50-tracks-grid', liveFeedData.top50 || []);
-      renderTrackGrid('rap-tracks-grid', liveFeedData.rap || []);
-      renderTrackGrid('electro-tracks-grid', liveFeedData.electro || []);
+    function showSkeletons() {
+      const skeletonHTML = Array(6).fill(0).map(() => `
+        <div class="flex-shrink-0 w-36 sm:w-44 md:w-48 bg-[#181818] p-3 rounded-xl flex flex-col border border-white/5 animate-pulse">
+          <div class="w-full aspect-square bg-zinc-800 rounded-lg mb-3"></div>
+          <div class="h-3.5 bg-zinc-800 rounded w-3/4 mb-2"></div>
+          <div class="h-2.5 bg-zinc-800 rounded w-1/2"></div>
+        </div>
+      `).join('');
+      
+      const trendingEl = document.getElementById('trending-tracks-carousel');
+      const top50El = document.getElementById('top50-tracks-carousel');
+      const rapEl = document.getElementById('rap-tracks-carousel');
+      const electroEl = document.getElementById('electro-tracks-carousel');
+      if (trendingEl) trendingEl.innerHTML = skeletonHTML;
+      if (top50El) top50El.innerHTML = skeletonHTML;
+      if (rapEl) rapEl.innerHTML = skeletonHTML;
+      if (electroEl) electroEl.innerHTML = skeletonHTML;
+    }
+
+    function renderAllFeeds() {
+      if (!liveFeedData) return;
+
+      updateGreeting();
+
+      if (liveFeedData.trending && liveFeedData.trending.length > 0) {
+        renderHeroBanner(liveFeedData.trending[0]);
+      }
+
+      renderQuickPicks();
+      renderHistoryShelf();
+      renderArtistsShelf();
+
+      renderTrackGrid('trending-tracks-carousel', liveFeedData.trending || []);
+      renderTrackGrid('top50-tracks-carousel', liveFeedData.top50 || []);
+      renderTrackGrid('rap-tracks-carousel', liveFeedData.rap || []);
+      renderTrackGrid('electro-tracks-carousel', liveFeedData.electro || []);
 
       refreshIcons();
+    }
+
+    function renderTrackCard(t, isCarousel = true) {
+      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
+      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
+      const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
+      const isLiked = isTrackLiked(t);
+      const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+      const widthClass = isCarousel ? 'w-36 sm:w-44 md:w-48 flex-shrink-0' : 'w-full';
+
+      return `
+        <div onclick="playRealTrack(${encoded})" class="${widthClass} group bg-[#181818] hover:bg-[#282828] p-3 md:p-3.5 rounded-xl transition-all duration-300 cursor-pointer flex flex-col relative shadow-lg hover:shadow-2xl border border-white/5">
+          <div class="relative w-full aspect-square mb-3 rounded-lg overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
+            <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
+            <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 z-10">
+              <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </div>
+            <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all ${isLiked ? '!opacity-100 text-spotify-green' : 'opacity-0 group-hover:opacity-100'} z-10">
+              <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
+            </button>
+            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all opacity-0 group-hover:opacity-100 hover:text-spotify-green z-10">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <h3 class="text-sm font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
+          <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 hover:text-white hover:underline cursor-pointer line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
+        </div>
+      `;
     }
 
     function renderTrackGrid(containerId, tracks) {
       const container = document.getElementById(containerId);
       if (!container) return;
-      const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
-      const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
-
-      container.innerHTML = tracks.map((t) => {
-        const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
-        const isLiked = isTrackLiked(t);
-        const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
-        return `
-        <div onclick="playRealTrack(${encoded})" class="group bg-[#181818] hover:bg-[#282828] p-3.5 rounded-lg transition-all duration-300 cursor-pointer flex flex-col relative shadow-md hover:shadow-2xl border border-white/5">
-          <div class="relative w-full aspect-square mb-3.5 rounded-md overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
-            <img src="${t.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
-            <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300">
-              <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-            </div>
-            <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all ${isLiked ? '!opacity-100 text-spotify-green' : 'opacity-0 group-hover:opacity-100'}">
-              <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
-            </button>
-            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all opacity-0 group-hover:opacity-100 hover:text-spotify-green">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-            </button>
-          </div>
-          <h3 class="text-sm md:text-base font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
-          <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 hover:text-white hover:underline cursor-pointer line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
-        </div>
-      `;
-      }).join('');
+      container.innerHTML = tracks.map(t => renderTrackCard(t, true)).join('');
     }
 
     // PLAYLIST MANAGEMENT
@@ -2094,12 +2369,17 @@
       const buttons = ['all', 'trending', 'top50', 'rap', 'electro'];
       buttons.forEach(b => {
         const btn = document.getElementById(`cat-btn-${b}`);
+        if (!btn) return;
         if (b === cat) {
-          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition";
+          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition cursor-pointer";
         } else {
-          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition";
+          btn.className = "px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer";
         }
       });
+
+      const homeSection = document.getElementById('home-default-section');
+      const historySection = document.getElementById('section-history');
+      const artistsSection = document.getElementById('section-artists');
 
       const sections = {
         trending: document.getElementById('section-trending'),
@@ -2109,13 +2389,23 @@
       };
 
       if (cat === 'all') {
-        Object.values(sections).forEach(s => s.classList.remove('hidden'));
+        if (homeSection) homeSection.classList.remove('hidden');
+        if (artistsSection) artistsSection.classList.remove('hidden');
+        renderHistoryShelf();
+        Object.values(sections).forEach(s => s && s.classList.remove('hidden'));
       } else {
+        if (homeSection) homeSection.classList.add('hidden');
+        if (historySection) historySection.classList.add('hidden');
+        if (artistsSection) artistsSection.classList.add('hidden');
         Object.keys(sections).forEach(k => {
+          if (!sections[k]) return;
           if (k === cat) sections[k].classList.remove('hidden');
           else sections[k].classList.add('hidden');
         });
       }
+
+      const pageContent = document.getElementById('page-content');
+      if (pageContent) pageContent.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // PLAYBACK
@@ -2324,8 +2614,8 @@
         }
       });
 
-      // 2. Update home grid cards and search grid cards
-      document.querySelectorAll('#trending-tracks-grid h3, #top50-tracks-grid h3, #rap-tracks-grid h3, #electro-tracks-grid h3, #search-results-grid h3').forEach(h3 => {
+      // 2. Update home carousel cards and search grid cards
+      document.querySelectorAll('#trending-tracks-carousel h3, #top50-tracks-carousel h3, #rap-tracks-carousel h3, #electro-tracks-carousel h3, #history-carousel h3, #search-results-grid h3').forEach(h3 => {
         const cardTitle = (h3.getAttribute('title') || h3.innerText || '').trim().toLowerCase();
         if (currentTitle && cardTitle === currentTitle) {
           h3.classList.add('text-spotify-green');
@@ -2336,7 +2626,24 @@
         }
       });
 
-      // 3. Update search top result title
+      // 3. Update quick-picks active equalizer and highlight
+      document.querySelectorAll('#quick-picks-grid > div').forEach(card => {
+        const titleEl = card.querySelector('p');
+        const eqEl = card.querySelector('.quick-pick-eq');
+        if (!titleEl) return;
+        const cardTitle = (titleEl.innerText || '').trim().toLowerCase();
+        if (currentTitle && cardTitle === currentTitle) {
+          titleEl.classList.add('text-spotify-green');
+          card.classList.add('ring-1', 'ring-spotify-green/60');
+          if (eqEl) eqEl.classList.remove('hidden');
+        } else {
+          titleEl.classList.remove('text-spotify-green');
+          card.classList.remove('ring-1', 'ring-spotify-green/60');
+          if (eqEl) eqEl.classList.add('hidden');
+        }
+      });
+
+      // 4. Update search top result title
       const topResTitle = document.querySelector('#search-top-result h2');
       if (topResTitle) {
         const t = (topResTitle.innerText || '').trim().toLowerCase();
@@ -2365,6 +2672,7 @@
 
       updateLikeIcon();
       refreshIcons();
+      recordTrackToHistory(track);
       updatePlayingTrackIndicators();
       if (isLyricsViewOpen) {
         loadLyricsForTrack(track);
