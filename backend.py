@@ -136,10 +136,23 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+def upgrade_cover_quality(url: str) -> str:
+    if not url:
+        return "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop"
+    # Upgrade Google User Content / YT3 / GGPHT / Google to 800x800 HD
+    if any(domain in url for domain in ("googleusercontent.com", "ggpht.com", "google.com")):
+        if "=" in url:
+            url = re.sub(r'=[sw]\d+.*$', '=w800-h800-l90-rj', url)
+    elif "unsplash.com" in url:
+        url = re.sub(r'w=\d+', 'w=800', url)
+        url = re.sub(r'h=\d+', 'h=800', url)
+    return url
+
 def get_best_thumbnail(thumbnails: list) -> str:
     if not thumbnails:
-        return "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
-    return thumbnails[-1].get("url", "")
+        return "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop"
+    url = thumbnails[-1].get("url", "")
+    return upgrade_cover_quality(url)
 
 def format_track(item: dict) -> Optional[dict]:
     video_id = item.get("videoId")
@@ -429,7 +442,7 @@ async def search_tracks(q: str = Query(..., min_length=1)):
             art_raw = ytm.search(clean_q, filter="artists")[:4] or []
             for a in art_raw:
                 th = a.get("thumbnails", [])
-                c = th[-1].get("url", "") if th else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop"
+                c = upgrade_cover_quality(th[-1].get("url", "")) if th else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=800&fit=crop"
                 b_id = a.get("browseId")
                 if b_id:
                     artists.append({
@@ -466,7 +479,7 @@ async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = 
         name = data.get("name") or q or "Artiste"
         subscribers = data.get("subscribers") or ""
         thumbs = data.get("thumbnails", [])
-        cover = thumbs[-1].get("url", "") if thumbs else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=800&fit=crop"
+        cover = upgrade_cover_quality(thumbs[-1].get("url", "")) if thumbs else "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=800&fit=crop"
 
         tracks = []
         songs_data = data.get("songs", {})
@@ -479,7 +492,7 @@ async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = 
                     if vid:
                         art = ", ".join([a.get("name", "") for a in t.get("artists", [])]) if t.get("artists") else name
                         th = t.get("thumbnails", [])
-                        c = th[-1].get("url", "") if th else cover
+                        c = upgrade_cover_quality(th[-1].get("url", "")) if th else cover
                         tracks.append({
                             "id": vid,
                             "title": t.get("title", "Titre"),
@@ -498,7 +511,7 @@ async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = 
                 if vid and vid not in existing_ids:
                     art = ", ".join([a.get("name", "") for a in t.get("artists", [])]) if t.get("artists") else name
                     th = t.get("thumbnails", [])
-                    c = th[-1].get("url", "") if th else cover
+                    c = upgrade_cover_quality(th[-1].get("url", "")) if th else cover
                     tracks.append({
                         "id": vid,
                         "title": t.get("title", "Titre"),
@@ -511,7 +524,7 @@ async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = 
         albums = []
         for alb in data.get("albums", {}).get("results", [])[:12]:
             th = alb.get("thumbnails", [])
-            c = th[-1].get("url", "") if th else cover
+            c = upgrade_cover_quality(th[-1].get("url", "")) if th else cover
             albums.append({
                 "title": alb.get("title"),
                 "year": alb.get("year", ""),
@@ -523,7 +536,7 @@ async def get_artist_profile(q: Optional[str] = None, browseId: Optional[str] = 
         singles = []
         for s in data.get("singles", {}).get("results", [])[:12]:
             th = s.get("thumbnails", [])
-            c = th[-1].get("url", "") if th else cover
+            c = upgrade_cover_quality(th[-1].get("url", "")) if th else cover
             singles.append({
                 "title": s.get("title"),
                 "year": s.get("year", ""),
@@ -562,7 +575,7 @@ async def get_album_details(browseId: str = Query(...)):
         title = data.get("title", "Album")
         artists = ", ".join([a.get("name", "") for a in data.get("artists", [])]) if data.get("artists") else "Artiste"
         thumbs = data.get("thumbnails", [])
-        cover = thumbs[-1].get("url", "") if thumbs else "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
+        cover = upgrade_cover_quality(thumbs[-1].get("url", "")) if thumbs else "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop"
         year = data.get("year", "")
 
         tracks = []

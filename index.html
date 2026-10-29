@@ -1262,6 +1262,20 @@
       }
     }
 
+    function getHighResCover(url) {
+      if (!url) return 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop';
+      // Upgrade Google / YouTube Music thumbnail sizes: =w60, =w120, =s60, etc -> =w800-h800-l90-rj
+      if (url.includes('googleusercontent.com') || url.includes('ggpht.com') || url.includes('google.com')) {
+        if (url.includes('=')) {
+          return url.replace(/=[sw]\d+.*$/, '=w800-h800-l90-rj');
+        }
+      }
+      if (url.includes('unsplash.com')) {
+        return url.replace(/w=\d+/, 'w=800').replace(/h=\d+/, 'h=800');
+      }
+      return url;
+    }
+
     function updateGreeting() {
       const greetingEl = document.getElementById('greeting-text');
       if (!greetingEl) return;
@@ -1350,17 +1364,18 @@
       const artistMap = new Map();
       allTracks.forEach(t => {
         if (t.artist && !artistMap.has(t.artist)) {
-          artistMap.set(t.artist, t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200&h=200&fit=crop');
+          artistMap.set(t.artist, t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop');
         }
       });
 
       const topArtists = Array.from(artistMap.entries()).slice(0, 12);
       container.innerHTML = topArtists.map(([artist, cover]) => {
         const safeArtist = artist.replace(/'/g, "\\'");
+        const highRes = getHighResCover(cover);
         return `
         <div onclick="viewArtistByName('${safeArtist}')" class="flex-shrink-0 w-32 sm:w-36 md:w-40 bg-[#181818] hover:bg-[#282828] p-3 rounded-xl transition-all duration-300 group cursor-pointer border border-white/5 text-center flex flex-col items-center shadow-lg hover:shadow-2xl">
           <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.6)] bg-zinc-800">
-            <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${artist}" loading="lazy">
+            <img src="${highRes}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${artist}" loading="lazy">
             <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
             <div class="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-spotify-green text-black flex items-center justify-center opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 shadow-lg transition">
               <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
@@ -1378,11 +1393,12 @@
       if (!container || !featuredTrack) return;
       const encoded = JSON.stringify(featuredTrack).replace(/"/g, '&quot;');
       const isLiked = isTrackLiked(featuredTrack);
+      const highRes = getHighResCover(featuredTrack.cover);
 
       container.innerHTML = `
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-zinc-950 p-5 sm:p-7 border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-6 group">
           <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-xl overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8)] flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 bg-zinc-900">
-            <img src="${featuredTrack.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&h=400&fit=crop'}" class="w-full h-full object-cover" alt="${featuredTrack.title}">
+            <img src="${highRes}" class="w-full h-full object-cover" alt="${featuredTrack.title}">
           </div>
 
           <div class="flex-1 text-center md:text-left space-y-2.5 z-10">
@@ -1423,9 +1439,10 @@
       container.innerHTML = picks.map(t => {
         const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
         const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+        const highRes = getHighResCover(t.cover);
         return `
         <div onclick="playRealTrack(${encoded})" class="group flex items-center bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-200 rounded-lg overflow-hidden cursor-pointer border border-white/5 pr-3 shadow-md relative ${isCurrent ? 'ring-1 ring-spotify-green/60' : ''}">
-          <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-14 h-14 md:w-16 md:h-16 object-cover flex-shrink-0 shadow-md" alt="${t.title}" loading="lazy">
+          <img src="${highRes}" class="w-14 h-14 md:w-16 md:h-16 object-cover flex-shrink-0 shadow-md" alt="${t.title}" loading="lazy">
           <div class="flex-1 px-3 min-w-0">
             <p class="text-xs md:text-sm font-bold text-white line-clamp-1 group-hover:underline ${isCurrent ? 'text-spotify-green' : ''}">${t.title}</p>
             <p class="text-[11px] text-zinc-400 line-clamp-1 font-medium mt-0.5">${t.artist}</p>
@@ -1490,11 +1507,12 @@
       const isLiked = isTrackLiked(t);
       const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
       const widthClass = isCarousel ? 'w-36 sm:w-44 md:w-48 flex-shrink-0' : 'w-full';
+      const highRes = getHighResCover(t.cover);
 
       return `
         <div onclick="playRealTrack(${encoded})" class="${widthClass} group bg-[#181818] hover:bg-[#282828] p-3 md:p-3.5 rounded-xl transition-all duration-300 cursor-pointer flex flex-col relative shadow-lg hover:shadow-2xl border border-white/5">
           <div class="relative w-full aspect-square mb-3 rounded-lg overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
-            <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
+            <img src="${highRes}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
             <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 z-10">
               <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
             </div>
@@ -1612,7 +1630,7 @@
 
       document.getElementById('detail-playlist-title').innerText = pl.title;
       document.getElementById('detail-playlist-badge').innerText = pl.type === 'spotify' ? "Importé de Spotify" : "Playlist Personnelle";
-      document.getElementById('detail-playlist-cover').src = pl.cover || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop";
+      document.getElementById('detail-playlist-cover').src = getHighResCover(pl.cover);
       document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(pl.tracks || []);
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
 
@@ -1710,8 +1728,7 @@
         const isThisPlaying = isCurrent && isPlaying;
         const isLiked = isTrackLiked(t);
         const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
-        const fallbackCover = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop';
-        const coverUrl = t.cover || fallbackCover;
+        const coverUrl = getHighResCover(t.cover);
 
         return `
           <div onclick="playTrackFromPlaylist(${idx})" class="track-row group grid grid-cols-[36px_1fr_auto] md:grid-cols-[36px_5fr_3fr_minmax(100px,1fr)] gap-4 items-center px-4 py-2 hover:bg-white/10 rounded-md transition duration-150 cursor-pointer select-none ${isCurrent ? 'is-active bg-white/5' : ''}">
@@ -2006,10 +2023,11 @@
         artistsContainer.classList.remove('hidden');
         artistsGrid.innerHTML = artists.map(a => {
           const safeName = (a.name || '').replace(/'/g, "\\'");
+          const highRes = getHighResCover(a.cover);
           return `
             <div onclick="viewArtistByBrowseId('${a.browseId}', '${safeName}')" class="group bg-[#181818] hover:bg-[#282828] p-4 rounded-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center shadow-md hover:shadow-2xl border border-white/5 relative">
               <div class="relative w-24 h-24 sm:w-28 sm:h-28 mb-3.5 rounded-full overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.6)] bg-zinc-900 border border-white/10">
-                <img src="${a.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${a.name}">
+                <img src="${highRes}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${a.name}">
                 <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                   <div class="w-10 h-10 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-xl">
                     <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
@@ -2041,6 +2059,7 @@
       const currentTrack = currentPlaylist ? currentPlaylist[currentTrackIndex] : null;
       const currentTitle = currentTrack ? (currentTrack.title || '').trim().toLowerCase() : '';
       const isCurrentTop = currentTitle && (topTrack.title || '').trim().toLowerCase() === currentTitle;
+      const topHighRes = getHighResCover(topTrack.cover);
 
       const topResultEl = document.getElementById('search-top-result');
       if (topResultEl) {
@@ -2048,7 +2067,7 @@
         topResultEl.innerHTML = `
           <div>
             <div class="relative w-28 h-28 sm:w-32 sm:h-32 mb-4 rounded-lg overflow-hidden shadow-2xl bg-zinc-900 border border-white/10">
-              <img src="${topTrack.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${topTrack.title}">
+              <img src="${topHighRes}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${topTrack.title}">
             </div>
             <h2 class="text-2xl sm:text-3xl font-black ${isCurrentTop ? 'text-spotify-green' : 'text-white'} group-hover:underline line-clamp-1 mb-2">${topTrack.title}</h2>
             <div class="flex items-center gap-2 text-sm text-zinc-400">
@@ -2082,11 +2101,12 @@
           const isThisPlaying = isCurrent && isPlaying;
           const isLiked = isTrackLiked(t);
           const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
+          const itemHighRes = getHighResCover(t.cover);
           return `
             <div onclick="playTrackFromSearch(${idx})" class="track-row group flex items-center justify-between p-2 rounded-lg hover:bg-white/10 transition duration-150 cursor-pointer ${isCurrent ? 'is-active bg-white/5' : ''}">
               <div class="flex items-center gap-3.5 min-w-0 flex-1">
                 <div class="relative w-11 h-11 flex-shrink-0 rounded overflow-hidden shadow">
-                  <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-full h-full object-cover" alt="${t.title}" loading="lazy">
+                  <img src="${itemHighRes}" class="w-full h-full object-cover" alt="${t.title}" loading="lazy">
                   <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                     <svg class="w-5 h-5 fill-white ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
                   </div>
@@ -2199,7 +2219,7 @@
       // Populate hero
       document.getElementById('artist-hero-name').innerText = artist.name;
       document.getElementById('artist-hero-subs').innerText = artist.subscribers || "Artiste vérifié";
-      document.getElementById('artist-hero-bg').style.backgroundImage = `url('${artist.cover || ""}')`;
+      document.getElementById('artist-hero-bg').style.backgroundImage = `url('${getHighResCover(artist.cover)}')`;
 
       // Update follow button
       const followBtn = document.getElementById('artist-follow-btn');
@@ -2248,7 +2268,7 @@
 
             <!-- Col 2: Thumbnail & Title -->
             <div class="flex items-center gap-3.5 min-w-0 overflow-hidden">
-              <img src="${t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop'}" class="w-10 h-10 rounded object-cover flex-shrink-0 shadow border border-white/5" alt="Cover" loading="lazy">
+              <img src="${getHighResCover(t.cover)}" class="w-10 h-10 rounded object-cover flex-shrink-0 shadow border border-white/5" alt="Cover" loading="lazy">
               <div class="truncate">
                 <p class="track-title text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green font-bold' : 'text-white'} group-hover:underline" data-title="${(t.title || '').trim().toLowerCase()}">${t.title}</p>
                 <p class="text-xs text-zinc-400 truncate md:hidden">${t.artist}</p>
@@ -2346,7 +2366,7 @@
         return `
           <div onclick="playOrViewAlbum('${item.browseId}')" class="group bg-[#181818] hover:bg-[#282828] p-3.5 rounded-lg transition-all duration-300 cursor-pointer flex flex-col relative shadow-md hover:shadow-2xl border border-white/5">
             <div class="relative w-full aspect-square mb-3.5 rounded-md overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
-              <img src="${item.cover}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}" loading="lazy">
+              <img src="${getHighResCover(item.cover)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}" loading="lazy">
               <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300">
                 <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
               </div>
@@ -2687,15 +2707,16 @@
 
     function syncUIWithTrack(track) {
       const dur = formatDuration(track.duration);
+      const highRes = getHighResCover(track.cover);
       document.getElementById('player-title').innerText = track.title;
       document.getElementById('player-artist').innerText = track.artist;
-      document.getElementById('player-thumb').src = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop';
+      document.getElementById('player-thumb').src = highRes;
       document.getElementById('duration-time').innerText = dur;
 
       document.getElementById('full-player-title').innerText = track.title;
       document.getElementById('full-player-artist').innerText = track.artist;
-      document.getElementById('full-player-artwork').src = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop';
-      document.getElementById('full-backdrop').style.backgroundImage = `url('${track.cover || ""}')`;
+      document.getElementById('full-player-artwork').src = highRes;
+      document.getElementById('full-backdrop').style.backgroundImage = `url('${highRes}')`;
       document.getElementById('full-duration-time').innerText = dur;
 
       updateLikeIcon();
@@ -2712,9 +2733,9 @@
           artist: track.artist,
           album: track.album || "Yanis Music",
           artwork: [
-            { src: track.cover, sizes: '512x512', type: 'image/jpeg' },
-            { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
-            { src: track.cover, sizes: '96x96', type: 'image/jpeg' }
+            { src: highRes, sizes: '800x800', type: 'image/jpeg' },
+            { src: highRes, sizes: '512x512', type: 'image/jpeg' },
+            { src: highRes, sizes: '256x256', type: 'image/jpeg' }
           ]
         });
 
