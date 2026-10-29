@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spotiwave-cache-v29';
+const CACHE_NAME = 'spotiwave-cache-v30';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -12,9 +12,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always fetch fresh network content first for HTML and API
+  // Always fetch fresh network content first for HTML, API and shared playlist routes
   const url = new URL(event.request.url);
-  if (url.pathname === '/' || url.pathname.endsWith('.html') || url.pathname.startsWith('/api/')) {
+  if (url.pathname === '/' || url.pathname.endsWith('.html') || url.pathname.startsWith('/api/') || url.pathname.startsWith('/playlist/')) {
     event.respondWith(fetch(event.request));
     return;
   }

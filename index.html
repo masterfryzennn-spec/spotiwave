@@ -598,6 +598,15 @@
                   <div class="text-[10px] text-zinc-400">Lien de playlist complet</div>
                 </div>
               </button>
+              <button onclick="closeHeaderMenu(); openEnterShareLinkModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="link" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Rejoindre une playlist</div>
+                  <div class="text-[10px] text-zinc-400">Ouvrir un lien ou code partagé</div>
+                </div>
+              </button>
               <button onclick="closeHeaderMenu(); showInstallGuide()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
                 <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
                   <i data-lucide="smartphone" class="w-4 h-4"></i>
@@ -665,6 +674,14 @@
                 <polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line>
                 <polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line>
               </svg>
+            </button>
+            <button onclick="shareCurrentPlaylist()" id="share-playlist-btn" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Partager cette playlist">
+              <i data-lucide="share-2" class="w-4 h-4 text-spotify-green"></i>
+              <span>Partager</span>
+            </button>
+            <button onclick="saveSharedPlaylistToLibrary()" id="save-shared-playlist-btn" class="hidden px-4 py-2 rounded-full bg-spotify-green hover:bg-[#1fdf64] text-black text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95" title="Ajouter à ma bibliothèque">
+              <i data-lucide="bookmark-plus" class="w-4 h-4"></i>
+              <span>Ajouter à ma bibliothèque</span>
             </button>
             <button onclick="refreshCurrentPlaylistCovers()" id="refresh-covers-btn" class="px-4 py-2 rounded-full border border-white/20 hover:border-white text-xs font-bold text-zinc-300 hover:text-white transition flex items-center gap-2 cursor-pointer shadow-sm" title="Mettre à jour les pochettes de chaque chanson">
               <i data-lucide="image" class="w-4 h-4 text-spotify-green"></i>
@@ -1232,6 +1249,92 @@
     </div>
   </div>
 
+  <!-- MODAL: PARTAGER UNE PLAYLIST -->
+  <div id="share-playlist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeShareModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-spotify-green/20 text-spotify-green flex items-center justify-center">
+            <i data-lucide="share-2" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Partager la playlist</h3>
+            <p id="share-modal-subtitle" class="text-xs text-zinc-400">Envoyez ce lien à vos amis</p>
+          </div>
+        </div>
+        <button onclick="closeShareModal()" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer">✕</button>
+      </div>
+
+      <!-- Playlist Preview Card -->
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/60 border border-white/5">
+        <img id="share-modal-cover" src="" class="w-14 h-14 rounded-lg object-cover shadow-md flex-shrink-0" alt="Cover">
+        <div class="min-w-0 flex-1">
+          <h4 id="share-modal-title" class="text-sm font-bold text-white truncate">Titre de la playlist</h4>
+          <p id="share-modal-meta" class="text-xs text-zinc-400 mt-0.5">0 morceau</p>
+        </div>
+      </div>
+
+      <!-- Link Box with Copy Button -->
+      <div class="space-y-1.5">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Lien de partage unique</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="share-modal-link-input" readonly class="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-spotify-green select-all">
+          <button onclick="copyShareLinkFromModal()" id="share-modal-copy-btn" class="px-3.5 py-2 rounded-xl bg-spotify-green hover:bg-spotify-hover text-black font-bold text-xs transition flex-shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copier</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Share Actions -->
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="nativeSharePlaylist()" id="share-modal-native-btn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+          <i data-lucide="share" class="w-4 h-4 text-spotify-green"></i>
+          <span>Partager...</span>
+        </button>
+        <button onclick="shareViaWhatsApp()" class="py-2.5 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>WhatsApp</span>
+        </button>
+      </div>
+
+      <div class="text-[11px] text-zinc-500 text-center pt-1">
+        N'importe qui avec ce lien peut écouter et enregistrer cette playlist !
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: OUVRIR PLAYLIST PARTAGÉE -->
+  <div id="open-share-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeEnterShareLinkModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+            <i data-lucide="link" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Rejoindre une playlist</h3>
+            <p class="text-xs text-zinc-400">Collez le code ou le lien reçu</p>
+          </div>
+        </div>
+        <button onclick="closeEnterShareLinkModal()" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Lien ou code de partage</label>
+        <input type="text" id="enter-share-input" placeholder="Ex: x8Ab9q ou lien complet SpotiWave" class="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-spotify-green">
+      </div>
+
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeEnterShareLinkModal()" class="px-4 py-2 rounded-full text-xs font-semibold text-zinc-400 hover:text-white cursor-pointer">Annuler</button>
+        <button onclick="confirmOpenSharedPlaylist()" class="px-5 py-2 rounded-full bg-spotify-green hover:bg-spotify-hover text-black font-bold text-xs transition cursor-pointer flex items-center gap-1.5 active:scale-95">
+          <span>Ouvrir</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: THÈMES PERSONNALISÉS -->
   <div id="theme-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeThemeModal()">
     <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative" onclick="event.stopPropagation()">
@@ -1617,6 +1720,13 @@
       renderPlaylistsSidebar();
       loadLiveFeed();
       initWebSocket();
+
+      // Check for incoming shared playlist in URL (?playlist=xyz or /playlist/xyz)
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedId = urlParams.get('playlist') || window.location.pathname.match(/\/playlist\/([a-zA-Z0-9_-]+)/)?.[1];
+      if (sharedId) {
+        setTimeout(() => loadAndOpenSharedPlaylist(sharedId), 400);
+      }
 
       // Ensure iOS audio session stays active on tab hide / lock screen
       document.addEventListener('visibilitychange', () => {
@@ -2015,6 +2125,8 @@
       document.getElementById('detail-playlist-cover').src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop";
       document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(likedTracks);
       document.getElementById('delete-playlist-btn').classList.add('hidden');
+      document.getElementById('save-shared-playlist-btn').classList.add('hidden');
+      document.getElementById('share-playlist-btn').classList.remove('hidden');
 
       renderPlaylistTracksTable(likedTracks, true);
       refreshIcons();
@@ -2042,6 +2154,8 @@
       document.getElementById('detail-playlist-cover').src = getHighResCover(pl.cover);
       document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(pl.tracks || []);
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
+      document.getElementById('save-shared-playlist-btn').classList.add('hidden');
+      document.getElementById('share-playlist-btn').classList.remove('hidden');
 
       renderPlaylistTracksTable(pl.tracks || [], false);
       refreshIcons();
@@ -2192,6 +2306,8 @@
       let tracks = [];
       if (activeViewingPlaylistId === 'liked') {
         tracks = likedTracks;
+      } else if (activeSharedPlaylist && activeViewingPlaylistId === activeSharedPlaylist.id) {
+        tracks = activeSharedPlaylist.tracks;
       } else {
         const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
         if (pl) tracks = pl.tracks;
@@ -2206,6 +2322,8 @@
       let tracks = [];
       if (activeViewingPlaylistId === 'liked') {
         tracks = likedTracks;
+      } else if (activeSharedPlaylist && activeViewingPlaylistId === activeSharedPlaylist.id) {
+        tracks = activeSharedPlaylist.tracks;
       } else {
         const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
         if (pl) tracks = pl.tracks;
@@ -4415,6 +4533,238 @@
         }
       }
     });
+
+    /* PLAYLIST SHARING SYSTEM */
+    let activeSharedPlaylist = null;
+    let currentShareUrl = '';
+
+    async function shareCurrentPlaylist() {
+      let pl = null;
+      if (activeViewingPlaylistId === 'liked') {
+        pl = {
+          title: "Mes Titres Likés",
+          description: "Sélection de morceaux favoris",
+          cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop",
+          tracks: likedTracks
+        };
+      } else if (activeSharedPlaylist && activeViewingPlaylistId === activeSharedPlaylist.id) {
+        pl = activeSharedPlaylist;
+      } else {
+        pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+      }
+
+      if (!pl || !pl.tracks || pl.tracks.length === 0) {
+        showToast("La playlist est vide, impossible de la partager.");
+        return;
+      }
+
+      showToast("Génération du lien de partage...");
+      try {
+        const resp = await fetch('/api/playlist/share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: pl.title,
+            description: pl.description || '',
+            cover: pl.cover || '',
+            tracks: pl.tracks
+          })
+        });
+        const data = await resp.json();
+        if (data.success && data.shareId) {
+          const shareUrl = `${window.location.origin}/?playlist=${data.shareId}`;
+          currentShareUrl = shareUrl;
+
+          // Native share on mobile if available
+          if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            try {
+              await navigator.share({
+                title: `Playlist : ${pl.title}`,
+                text: `Écoute la playlist "${pl.title}" (${pl.tracks.length} titres) sur SpotiWave !`,
+                url: shareUrl
+              });
+              showToast("Playlist partagée !");
+              return;
+            } catch(e) {}
+          }
+
+          openShareModal(pl, shareUrl);
+        } else {
+          showToast("Erreur : " + (data.error || "Inconnue"));
+        }
+      } catch (err) {
+        showToast("Erreur de connexion au serveur");
+      }
+    }
+
+    function shareSpecificPlaylist(plId) {
+      activeViewingPlaylistId = plId;
+      shareCurrentPlaylist();
+    }
+
+    function openShareModal(pl, url) {
+      document.getElementById('share-modal-title').innerText = pl.title;
+      document.getElementById('share-modal-meta').innerText = `${pl.tracks.length} morceau${pl.tracks.length > 1 ? 's' : ''}`;
+      document.getElementById('share-modal-cover').src = getHighResCover(pl.cover || pl.tracks[0]?.cover);
+      document.getElementById('share-modal-link-input').value = url;
+      document.getElementById('share-playlist-modal').classList.remove('hidden');
+      refreshIcons();
+    }
+
+    function closeShareModal() {
+      document.getElementById('share-playlist-modal').classList.add('hidden');
+    }
+
+    function copyShareLinkFromModal() {
+      const input = document.getElementById('share-modal-link-input');
+      if (!input || !input.value) return;
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast("Lien copié dans le presse-papier !");
+        const btn = document.getElementById('share-modal-copy-btn');
+        if (btn) {
+          btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Copié !</span>`;
+          setTimeout(() => {
+            btn.innerHTML = `<i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copier</span>`;
+            refreshIcons();
+          }, 2000);
+          refreshIcons();
+        }
+      }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        showToast("Lien copié !");
+      });
+    }
+
+    function nativeSharePlaylist() {
+      const input = document.getElementById('share-modal-link-input');
+      const title = document.getElementById('share-modal-title').innerText;
+      if (navigator.share) {
+        navigator.share({
+          title: `Playlist : ${title}`,
+          text: `Écoute la playlist "${title}" sur SpotiWave !`,
+          url: input.value
+        }).catch(() => {});
+      } else {
+        copyShareLinkFromModal();
+      }
+    }
+
+    function shareViaWhatsApp() {
+      const input = document.getElementById('share-modal-link-input');
+      const title = document.getElementById('share-modal-title').innerText;
+      const text = encodeURIComponent(`Écoute la playlist "${title}" sur SpotiWave : ${input.value}`);
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+
+    async function loadAndOpenSharedPlaylist(shareId) {
+      if (!shareId) return;
+      if (shareId.includes('playlist=')) {
+        shareId = shareId.split('playlist=')[1].split('&')[0];
+      } else if (shareId.includes('/playlist/')) {
+        shareId = shareId.split('/playlist/')[1].split('?')[0];
+      }
+      shareId = shareId.trim();
+      if (!shareId) return;
+
+      showToast("Chargement de la playlist partagée...");
+      try {
+        const resp = await fetch(`/api/playlist/shared/${encodeURIComponent(shareId)}`);
+        const data = await resp.json();
+        if (data.success && data.playlist) {
+          activeSharedPlaylist = data.playlist;
+          activeViewingPlaylistId = data.playlist.id;
+
+          document.getElementById('playlist-detail-section').classList.remove('hidden');
+          document.getElementById('artist-detail-section').classList.add('hidden');
+          document.getElementById('home-default-section').classList.add('hidden');
+          document.getElementById('category-pills-bar').classList.add('hidden');
+          document.getElementById('section-trending').classList.add('hidden');
+          document.getElementById('section-top50').classList.add('hidden');
+          document.getElementById('section-rap').classList.add('hidden');
+          document.getElementById('section-electro').classList.add('hidden');
+          document.getElementById('search-results-section').classList.add('hidden');
+
+          document.getElementById('detail-playlist-title').innerText = activeSharedPlaylist.title;
+          document.getElementById('detail-playlist-badge').innerText = "✨ Playlist partagée";
+          document.getElementById('detail-playlist-cover').src = getHighResCover(activeSharedPlaylist.cover || activeSharedPlaylist.tracks[0]?.cover);
+          document.getElementById('detail-playlist-meta').innerText = formatPlaylistDuration(activeSharedPlaylist.tracks || []);
+          document.getElementById('delete-playlist-btn').classList.add('hidden');
+          document.getElementById('share-playlist-btn').classList.remove('hidden');
+
+          const isSaved = userPlaylists.some(p => p.id === activeSharedPlaylist.id || p.title === activeSharedPlaylist.title);
+          const saveBtn = document.getElementById('save-shared-playlist-btn');
+          if (saveBtn) {
+            saveBtn.classList.remove('hidden');
+            if (isSaved) {
+              saveBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Déjà dans ma bibliothèque</span>`;
+              saveBtn.className = "px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-bold transition flex items-center gap-1.5 cursor-default shadow-md";
+            } else {
+              saveBtn.innerHTML = `<i data-lucide="bookmark-plus" class="w-4 h-4"></i><span>Ajouter à ma bibliothèque</span>`;
+              saveBtn.className = "px-4 py-2 rounded-full bg-spotify-green hover:bg-[#1fdf64] text-black text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95";
+            }
+          }
+
+          renderPlaylistTracksTable(activeSharedPlaylist.tracks || [], false);
+          refreshIcons();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          showToast(`Playlist "${activeSharedPlaylist.title}" chargée avec succès !`);
+        } else {
+          showToast("Playlist introuvable ou expirée");
+        }
+      } catch(e) {
+        showToast("Impossible de charger la playlist");
+      }
+    }
+
+    function saveSharedPlaylistToLibrary() {
+      if (!activeSharedPlaylist) return;
+      const already = userPlaylists.find(p => p.id === activeSharedPlaylist.id || p.title === activeSharedPlaylist.title);
+      if (already) {
+        showToast("Cette playlist est déjà dans votre bibliothèque !");
+        return;
+      }
+      const newPl = {
+        id: 'pl_' + Date.now(),
+        title: activeSharedPlaylist.title,
+        description: activeSharedPlaylist.description || "Partagée via SpotiWave",
+        cover: activeSharedPlaylist.cover || (activeSharedPlaylist.tracks?.[0]?.cover || ''),
+        tracks: [...activeSharedPlaylist.tracks],
+        type: 'user'
+      };
+      userPlaylists.unshift(newPl);
+      localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      renderPlaylistsSidebar();
+      
+      const saveBtn = document.getElementById('save-shared-playlist-btn');
+      if (saveBtn) {
+        saveBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Enregistrée ✓</span>`;
+        saveBtn.className = "px-4 py-2 rounded-full bg-zinc-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-default shadow-md";
+      }
+      showToast(`Playlist "${newPl.title}" ajoutée à votre bibliothèque !`);
+      refreshIcons();
+    }
+
+    function openEnterShareLinkModal() {
+      document.getElementById('open-share-modal').classList.remove('hidden');
+      document.getElementById('enter-share-input').value = '';
+      setTimeout(() => document.getElementById('enter-share-input').focus(), 150);
+      refreshIcons();
+    }
+
+    function closeEnterShareLinkModal() {
+      document.getElementById('open-share-modal').classList.add('hidden');
+    }
+
+    function confirmOpenSharedPlaylist() {
+      const val = document.getElementById('enter-share-input').value.trim();
+      if (!val) {
+        showToast("Veuillez saisir un code ou lien");
+        return;
+      }
+      closeEnterShareLinkModal();
+      loadAndOpenSharedPlaylist(val);
+    }
   </script>
 </body>
 </html>

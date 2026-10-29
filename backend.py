@@ -36,6 +36,27 @@ artist_cache: Dict[str, Dict] = {}
 album_cache: Dict[str, Dict] = {}
 lyrics_cache: Dict[str, Dict] = {}
 
+# Shared playlists storage
+SHARED_PLAYLISTS_FILE = os.path.join(DIR_PATH, "shared_playlists.json")
+shared_playlists_cache: Dict[str, dict] = {}
+
+def load_shared_playlists():
+    global shared_playlists_cache
+    if os.path.exists(SHARED_PLAYLISTS_FILE):
+        try:
+            with open(SHARED_PLAYLISTS_FILE, "r", encoding="utf-8") as f:
+                shared_playlists_cache = json.load(f)
+        except Exception as e:
+            print(f"[SHARE] Error loading shared playlists: {e}")
+            shared_playlists_cache = {}
+
+def save_shared_playlists():
+    try:
+        with open(SHARED_PLAYLISTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(shared_playlists_cache, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[SHARE] Error saving shared playlists: {e}")
+
 class Room:
     def __init__(self, room_id: str):
         self.room_id = room_id
@@ -176,6 +197,12 @@ async def ping():
 
 @app.on_event("startup")
 async def startup_prewarm():
+    # 0. Load shared playlists from disk
+    try:
+        load_shared_playlists()
+    except Exception:
+        pass
+
     # 1. Pre-fetch live feed on server start so the very first user gets 0ms response
     try:
         asyncio.create_task(get_live_feed())
@@ -918,6 +945,62 @@ async def websocket_endpoint(websocket: WebSocket, room: str = Query("default"))
             })
     except Exception:
         manager.disconnect(websocket)
+
+@app.post("/api/playlist/share")
+async def share_playlist(request: Request):
+    try:
+        data = await request.json()
+        title = (data.get("title") or "Ma Playlist").strip()
+        tracks = data.get("tracks", [])
+        if not tracks:
+            return JSONResponse({"success": False, "error": "La playlist est vide"}, status_code=400)
+        
+        import secrets
+        share_id = secrets.token_urlsafe(6).replace("-", "").replace("_", "")[:6]
+        
+        # Ensure unique id
+        while share_id in shared_playlists_cache:
+            share_id = secrets.token_urlsafe(6).replace("-", "").replace("_", "")[:6]
+
+        playlist_data = {
+            "id": share_id,
+            "title": title[:100],
+            "description": (data.get("description") or "")[:300],
+            "cover": data.get("cover") or (tracks[0].get("cover") if tracks else ""),
+            "tracks": tracks,
+            "createdAt": int(time.time()),
+            "trackCount": len(tracks)
+        }
+        
+        shared_playlists_cache[share_id] = playlist_data
+        save_shared_playlists()
+        
+        return JSONResponse({
+            "success": True,
+            "shareId": share_id,
+            "url": f"/?playlist={share_id}",
+            "playlist": playlist_data
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@app.get("/api/playlist/shared/{share_id}")
+async def get_shared_playlist(share_id: str):
+    pl = shared_playlists_cache.get(share_id)
+    if not pl:
+        load_shared_playlists()
+        pl = shared_playlists_cache.get(share_id)
+        
+    if not pl:
+        return JSONResponse({"success": False, "error": "Playlist introuvable ou expirée"}, status_code=404)
+        
+    return JSONResponse({"success": True, "playlist": pl})
+
+@app.get("/playlist/{share_id}")
+async def get_playlist_page(share_id: str):
+    response = FileResponse(os.path.join(DIR_PATH, "index.html"))
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.get("/")
 async def get_index():
