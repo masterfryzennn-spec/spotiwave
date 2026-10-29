@@ -267,7 +267,81 @@ async def import_spotify(url: str = Query(..., min_length=1)):
     
     item_type = m.group(1)
     item_id = m.group(2)
-    
+    clean_spotify_url = f"https://open.spotify.com/{item_type}/{item_id}"
+
+    # Method 1: Use SpotifyScraper with max_tracks=None (allows unlimited tracks > 100!)
+    try:
+        from spotify_scraper import SpotifyClient
+        with SpotifyClient() as client:
+            if item_type == 'playlist':
+                pl = client.get_playlist(clean_spotify_url, max_tracks=None)
+                tracks = []
+                pl_cover = upgrade_cover_quality(pl.images[0].url if pl.images else "")
+                for item in pl.tracks:
+                    t = item.track
+                    artists = ", ".join(a.name for a in t.artists) if t.artists else "Artiste Inconnu"
+                    dur = f"{t.duration_ms // 60000}:{(t.duration_ms % 60000) // 1000:02d}" if t.duration_ms else "3:30"
+                    t_cover = upgrade_cover_quality(t.images[0].url if t.images else pl_cover)
+                    tracks.append({
+                        'title': t.name,
+                        'artist': artists,
+                        'duration': dur,
+                        'cover': t_cover
+                    })
+                return JSONResponse(content={
+                    'success': True,
+                    'type': 'playlist',
+                    'title': pl.name or 'Playlist Spotify',
+                    'cover': pl_cover,
+                    'count': len(tracks),
+                    'tracks': tracks
+                })
+
+            elif item_type == 'album':
+                alb = client.get_album(clean_spotify_url)
+                tracks = []
+                alb_cover = upgrade_cover_quality(alb.images[0].url if alb.images else "")
+                for t in alb.tracks:
+                    artists = ", ".join(a.name for a in t.artists) if t.artists else "Artiste Inconnu"
+                    dur = f"{t.duration_ms // 60000}:{(t.duration_ms % 60000) // 1000:02d}" if t.duration_ms else "3:30"
+                    t_cover = upgrade_cover_quality(t.images[0].url if t.images else alb_cover)
+                    tracks.append({
+                        'title': t.name,
+                        'artist': artists,
+                        'duration': dur,
+                        'cover': t_cover
+                    })
+                return JSONResponse(content={
+                    'success': True,
+                    'type': 'album',
+                    'title': alb.name or 'Album Spotify',
+                    'cover': alb_cover,
+                    'count': len(tracks),
+                    'tracks': tracks
+                })
+
+            elif item_type == 'track':
+                tr = client.get_track(clean_spotify_url)
+                artists = ", ".join(a.name for a in tr.artists) if tr.artists else "Artiste Inconnu"
+                dur = f"{tr.duration_ms // 60000}:{(tr.duration_ms % 60000) // 1000:02d}" if tr.duration_ms else "3:30"
+                tr_cover = upgrade_cover_quality(tr.images[0].url if tr.images else "")
+                return JSONResponse(content={
+                    'success': True,
+                    'type': 'track',
+                    'title': tr.name,
+                    'cover': tr_cover,
+                    'count': 1,
+                    'tracks': [{
+                        'title': tr.name,
+                        'artist': artists,
+                        'duration': dur,
+                        'cover': tr_cover
+                    }]
+                })
+    except Exception as scraper_err:
+        print(f"SpotifyScraper error, falling back to embed parser: {scraper_err}")
+
+    # Method 2 (Fallback): Embed HTML scraping (fallback in case scraper fails)
     embed_url = f'https://open.spotify.com/embed/{item_type}/{item_id}'
     req = urllib.request.Request(embed_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
     try:
@@ -281,47 +355,12 @@ async def import_spotify(url: str = Query(..., min_length=1)):
         entity = page_props.get('state', {}).get('data', {}).get('entity', {})
         
         name = entity.get('name') or page_props.get('title') or 'Playlist Spotify'
-        cover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop"
+        cover = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=800&h=800&fit=crop"
         visual = entity.get('visualIdentity', {}) or {}
         if visual.get('image') and len(visual['image']) > 0:
-            cover = visual['image'][-1].get('url', cover)
+            cover = upgrade_cover_quality(visual['image'][-1].get('url', cover))
 
         track_list = entity.get('trackList', [])
-        
-        # Extract individual track IDs from Spotify URIs
-        track_ids = []
-        for t in track_list:
-            uri = t.get('uri', '')
-            if 'track:' in uri:
-                track_ids.append(uri.split('track:')[-1])
-            else:
-                track_ids.append(None)
-
-        def fetch_single_thumb(tid):
-            if not tid:
-                return tid, None
-            try:
-                target_url = f"https://open.spotify.com/track/{tid}"
-                u = f"https://open.spotify.com/oembed?url={urllib.parse.quote(target_url, safe='')}"
-                r = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                res = urllib.request.urlopen(r, timeout=3.0)
-                d = json.loads(res.read())
-                return tid, d.get('thumbnail_url')
-            except Exception:
-                return tid, None
-
-        thumb_map = {}
-        valid_tids = [tid for tid in track_ids if tid]
-        if valid_tids:
-            try:
-                from concurrent.futures import ThreadPoolExecutor
-                with ThreadPoolExecutor(max_workers=min(20, len(valid_tids))) as executor:
-                    for tid, thumb in executor.map(fetch_single_thumb, valid_tids):
-                        if thumb:
-                            thumb_map[tid] = thumb
-            except Exception:
-                pass
-
         tracks = []
         for i, t in enumerate(track_list):
             raw_dur = t.get('duration')
@@ -329,23 +368,16 @@ async def import_spotify(url: str = Query(..., min_length=1)):
             if raw_dur:
                 try:
                     num_ms = int(raw_dur)
-                    if num_ms > 1000:
-                        total_secs = num_ms // 1000
-                    else:
-                        total_secs = num_ms
+                    total_secs = num_ms // 1000 if num_ms > 1000 else num_ms
                     formatted_dur = f"{total_secs // 60}:{total_secs % 60:02d}"
                 except Exception:
                     formatted_dur = "3:30"
-
-            tid = track_ids[i] if i < len(track_ids) else None
-            # Use individual album cover if available; otherwise fallback to playlist cover
-            t_cover = thumb_map.get(tid) or cover
 
             tracks.append({
                 'title': t.get('title', 'Titre'),
                 'artist': t.get('subtitle', 'Artiste'),
                 'duration': formatted_dur,
-                'cover': t_cover
+                'cover': cover
             })
             
         return JSONResponse(content={

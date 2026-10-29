@@ -3,3 +3,4 @@ uvicorn[standard]>=0.30.0
 ytmusicapi>=1.12.0
 yt-dlp>=2024.10.0
 aiohttp>=3.9.0
+spotifyscraper>=3.9.0
