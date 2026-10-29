@@ -533,13 +533,13 @@
       
       <!-- TOP BAR -->
       <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10 border-b border-white/5">
-        <div class="flex items-center gap-2.5 flex-1 max-w-lg">
+        <div class="flex items-center gap-2.5 flex-1">
           <div class="relative w-full">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
             <input 
               type="text" 
               id="global-search-input"
-              placeholder="Rechercher parmi 100 millions de titres en direct..." 
+              placeholder="Rechercher un son ou un artiste..." 
               oninput="onSearchInput(this.value)"
               class="w-full bg-zinc-800 text-sm text-white placeholder-zinc-400 pl-9 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-spotify-green transition"
             >
@@ -549,42 +549,98 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <!-- Button Themes in Header -->
-          <button onclick="openThemeModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition cursor-pointer" title="Changer le thème">
+        <div class="flex items-center gap-2 relative">
+          <!-- Button Themes in Header (Desktop) -->
+          <button onclick="openThemeModal()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition cursor-pointer" title="Changer le thème">
             <i data-lucide="palette" class="w-3.5 h-3.5 text-spotify-green"></i>
-            <span class="hidden sm:inline">Thèmes</span>
+            <span>Thèmes</span>
           </button>
 
-          <!-- Button Import Spotify in Header -->
-          <button onclick="openSpotifyImportModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-spotify-green/10 hover:bg-spotify-green/20 text-xs font-bold text-spotify-green border border-spotify-green/30 transition cursor-pointer">
+          <!-- Button Import Spotify in Header (Desktop) -->
+          <button onclick="openSpotifyImportModal()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-spotify-green/10 hover:bg-spotify-green/20 text-xs font-bold text-spotify-green border border-spotify-green/30 transition cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span class="hidden sm:inline">Importer Spotify</span>
+            <span>Importer Spotify</span>
           </button>
 
-          <button onclick="toggleCompactMode()" title="Mode Allégé / Mini-Lecteur" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+          <button onclick="toggleCompactMode()" title="Mode Allégé / Mini-Lecteur" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
             <i data-lucide="minimize-2" class="w-3.5 h-3.5 text-zinc-300"></i>
             <span>Mode Allégé</span>
           </button>
 
-          <button onclick="showInstallGuide()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
+          <button onclick="showInstallGuide()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
             <i data-lucide="smartphone" class="w-3.5 h-3.5 text-spotify-green"></i>
-            <span class="hidden sm:inline">PWA iPhone</span>
+            <span>PWA iPhone</span>
           </button>
+
+          <!-- DROPDOWN MENU BUTTON (Clean Mobile & Desktop Menu) -->
+          <div class="relative">
+            <button onclick="toggleHeaderMenu(event)" id="header-menu-btn" class="w-9 h-9 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-white flex items-center justify-center border border-white/10 transition active:scale-95 cursor-pointer flex-shrink-0" title="Menu et options">
+              <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+            </button>
+
+            <!-- DROPDOWN MENU SHEET -->
+            <div id="header-dropdown-menu" class="hidden absolute right-0 top-11 w-64 bg-zinc-900/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl p-1.5 z-50 text-xs space-y-0.5">
+              <button onclick="closeHeaderMenu(); openThemeModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="palette" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Thèmes de couleur</div>
+                  <div class="text-[10px] text-zinc-400">Violet, Rouge, Bleu, Noir...</div>
+                </div>
+              </button>
+              <button onclick="closeHeaderMenu(); openSpotifyImportModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-spotify-green/20 text-spotify-green flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Importer Spotify</div>
+                  <div class="text-[10px] text-zinc-400">Lien de playlist complet</div>
+                </div>
+              </button>
+              <button onclick="closeHeaderMenu(); showInstallGuide()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="smartphone" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Installer sur iPhone</div>
+                  <div class="text-[10px] text-zinc-400">Ajouter à l'écran d'accueil</div>
+                </div>
+              </button>
+              <button onclick="closeHeaderMenu(); openConnectModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="cast" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Connect Direct</div>
+                  <div class="text-[10px] text-zinc-400">Contrôle distant et Jam</div>
+                </div>
+              </button>
+              <button onclick="closeHeaderMenu(); toggleCompactMode()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
+                <div class="w-7 h-7 rounded-lg bg-zinc-700/50 text-zinc-300 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="minimize-2" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold text-white">Mode Allégé</div>
+                  <div class="text-[10px] text-zinc-400">Mini-lecteur épuré</div>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
       <!-- CATEGORY PILLS BAR -->
       <div id="category-pills-bar" class="px-4 md:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-zinc-950/20 backdrop-blur">
-        <button onclick="filterCategory('all')" id="cat-btn-all" class="px-3.5 py-1 rounded-full text-xs font-bold bg-white text-black transition">Tout</button>
-        <button onclick="filterCategory('trending')" id="cat-btn-trending" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🔥 Tendances France</button>
-        <button onclick="filterCategory('top50')" id="cat-btn-top50" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🏆 Top 50 Hits</button>
-        <button onclick="filterCategory('rap')" id="cat-btn-rap" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">🎤 Rap Français</button>
-        <button onclick="filterCategory('electro')" id="cat-btn-electro" class="px-3.5 py-1 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition">⚡ Pop & Electro</button>
+        <button onclick="filterCategory('all')" id="cat-btn-all" class="whitespace-nowrap flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-white text-black transition cursor-pointer">Tout</button>
+        <button onclick="filterCategory('trending')" id="cat-btn-trending" class="whitespace-nowrap flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">🔥 Tendances France</button>
+        <button onclick="filterCategory('top50')" id="cat-btn-top50" class="whitespace-nowrap flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">🏆 Top 50 Hits</button>
+        <button onclick="filterCategory('rap')" id="cat-btn-rap" class="whitespace-nowrap flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">🎤 Rap Français</button>
+        <button onclick="filterCategory('electro')" id="cat-btn-electro" class="whitespace-nowrap flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition cursor-pointer">⚡ Pop & Electro</button>
       </div>
 
       <!-- SCROLLABLE PAGE BODY -->
-      <div id="page-content" class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll space-y-8 pb-32">
+      <div id="page-content" class="flex-1 overflow-y-auto px-4 pt-5 pb-36 md:p-8 custom-scroll space-y-6 md:space-y-8">
         
         <!-- PLAYLIST DETAIL VIEW (Hidden by default, shown when viewing a playlist) -->
         <section id="playlist-detail-section" class="hidden space-y-6">
@@ -853,25 +909,42 @@
   </div>
 
   <!-- BOTTOM MINI PLAYER -->
-  <footer class="h-20 bg-zinc-950 border-t border-zinc-800/80 px-3 md:px-6 flex items-center justify-between z-30 relative">
+  <footer class="h-16 md:h-20 bg-zinc-950 border-t border-zinc-800/80 px-3 md:px-6 flex items-center justify-between z-30 relative select-none">
     
-    <!-- Current Track Info -->
-    <div onclick="openMobilePlayer()" class="flex items-center gap-3 cursor-pointer flex-1 md:flex-initial max-w-[50%] md:max-w-xs select-none">
-      <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-12 h-12 rounded-md object-cover shadow-lg border border-white/5 flex-shrink-0" alt="Cover">
-      <div class="overflow-hidden">
-        <p id="player-title" class="text-sm font-semibold text-white line-clamp-1">Sélectionnez un titre</p>
-        <p id="player-artist" onclick="event.stopPropagation(); viewArtistByName(this.innerText)" class="text-xs text-spotify-subtext hover:text-white hover:underline cursor-pointer line-clamp-1">—</p>
+    <!-- Mobile Subtle Progress Bar at the very top of footer -->
+    <div class="md:hidden absolute top-0 left-0 right-0 h-[2.5px] bg-white/10 overflow-hidden pointer-events-none">
+      <div id="mobile-progress-bar" class="h-full bg-spotify-green transition-all duration-200" style="width: 0%"></div>
+    </div>
+    
+    <!-- Current Track Info (Opens Full Player on tap) -->
+    <div onclick="openMobilePlayer()" class="flex items-center gap-2.5 sm:gap-3 cursor-pointer flex-1 md:flex-initial max-w-[68%] sm:max-w-[70%] md:max-w-xs min-w-0 pr-1">
+      <img id="player-thumb" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=150&h=150&fit=crop" class="w-11 h-11 md:w-12 md:h-12 rounded-lg object-cover shadow-md border border-white/5 flex-shrink-0" alt="Cover">
+      <div class="overflow-hidden min-w-0 flex-1">
+        <p id="player-title" class="text-xs md:text-sm font-bold text-white truncate">Sélectionnez un titre</p>
+        <p id="player-artist" onclick="event.stopPropagation(); viewArtistByName(this.innerText)" class="text-[11px] md:text-xs text-spotify-subtext hover:text-white hover:underline cursor-pointer truncate">—</p>
       </div>
-      <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition ml-2 cursor-pointer">
+      <button onclick="event.stopPropagation(); toggleLikeCurrent()" id="like-btn" class="text-spotify-subtext hover:text-spotify-green transition p-1 cursor-pointer flex-shrink-0">
         <i data-lucide="heart" class="w-5 h-5"></i>
       </button>
-      <button onclick="event.stopPropagation(); openAddToPlaylistModal(currentPlaylist[currentTrackIndex])" title="Ajouter à une playlist" class="text-spotify-subtext hover:text-white transition ml-1 cursor-pointer">
+      <button onclick="event.stopPropagation(); openAddToPlaylistModal(currentPlaylist[currentTrackIndex])" title="Ajouter à une playlist" class="hidden sm:inline-block text-spotify-subtext hover:text-white transition ml-1 cursor-pointer flex-shrink-0">
         <i data-lucide="plus-circle" class="w-5 h-5"></i>
       </button>
     </div>
 
+    <!-- MOBILE CONTROLS: Clean Next + Big Play Button -->
+    <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
+      <button onclick="playNext()" class="text-white/70 hover:text-white p-2 active:scale-90 transition cursor-pointer" title="Suivant">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+      <button onclick="togglePlay()" id="mobile-play-btn" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-90 transition shadow-lg relative cursor-pointer" title="Lecture / Pause">
+        <svg id="svg-play-mob" class="w-4 h-4 fill-black ml-0.5 pointer-events-none" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        <svg id="svg-pause-mob" class="w-4 h-4 fill-black hidden pointer-events-none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        <svg id="svg-spinner-mob" class="w-4 h-4 animate-spin hidden text-black pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+      </button>
+    </div>
+
     <!-- Central Controls & Scrubber -->
-    <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl px-2">
+    <div class="hidden md:flex flex-col items-center gap-1.5 flex-1 max-w-xl px-2">
       <div class="flex items-center gap-4">
         <!-- SHUFFLE BUTTON -->
         <button onclick="toggleShuffle()" id="shuffle-btn" class="flex flex-col items-center justify-center text-zinc-400 hover:text-white transition cursor-pointer p-1.5" title="Lecture aléatoire">
@@ -1732,31 +1805,31 @@
       const highRes = getHighResCover(featuredTrack.cover);
 
       container.innerHTML = `
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-zinc-950 p-5 sm:p-7 border border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-6 group">
-          <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-xl overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8)] flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 bg-zinc-900">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-zinc-950 p-3.5 sm:p-7 border border-white/10 shadow-2xl flex flex-row items-center gap-3.5 sm:gap-6 group">
+          <div class="relative w-24 h-24 sm:w-44 sm:h-44 rounded-xl overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.8)] flex-shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 bg-zinc-900">
             <img src="${highRes}" class="w-full h-full object-cover" alt="${featuredTrack.title}">
           </div>
 
-          <div class="flex-1 text-center md:text-left space-y-2.5 z-10">
-            <div class="flex items-center justify-center md:justify-start gap-2">
-              <span class="px-2.5 py-0.5 rounded-full bg-spotify-green/20 text-spotify-green border border-spotify-green/30 text-[11px] font-black uppercase tracking-wider">
-                ✨ À la une • N°1
+          <div class="flex-1 text-left space-y-1 sm:space-y-2.5 min-w-0 z-10">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full bg-spotify-green/20 text-spotify-green border border-spotify-green/30 text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                ✨ À la une
               </span>
-              <span class="text-xs text-zinc-400 font-semibold">• Hit du Moment</span>
+              <span class="text-[10px] sm:text-xs text-zinc-400 font-semibold truncate">• Hit du Moment</span>
             </div>
-            <h2 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight line-clamp-2">${featuredTrack.title}</h2>
-            <p onclick="viewArtistByName('${(featuredTrack.artist || '').replace(/'/g, "\\'")}')" class="text-sm sm:text-base font-semibold text-zinc-300 hover:text-white hover:underline cursor-pointer inline-block">${featuredTrack.artist}</p>
+            <h2 class="text-base sm:text-3xl lg:text-4xl font-black text-white tracking-tight truncate sm:line-clamp-2">${featuredTrack.title}</h2>
+            <p onclick="viewArtistByName('${(featuredTrack.artist || '').replace(/'/g, "\\'")}')" class="text-xs sm:text-base font-semibold text-zinc-300 hover:text-white hover:underline cursor-pointer truncate">${featuredTrack.artist}</p>
             
-            <div class="flex items-center justify-center md:justify-start gap-3 pt-2">
-              <button onclick="playRealTrack(${encoded})" class="px-6 py-2.5 rounded-full bg-spotify-green hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black font-extrabold text-sm flex items-center gap-2 shadow-xl transition cursor-pointer">
-                <svg class="w-4 h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <div class="flex items-center gap-2 pt-1 sm:pt-2">
+              <button onclick="playRealTrack(${encoded})" class="px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-full bg-spotify-green hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-xl transition cursor-pointer">
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
                 <span>Écouter</span>
               </button>
-              <button onclick="toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
-                <i data-lucide="heart" class="w-5 h-5 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
+              <button onclick="toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
+                <i data-lucide="heart" class="w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
               </button>
-              <button onclick="openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+              <button onclick="openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition hover:scale-105 active:scale-95 cursor-pointer">
+                <i data-lucide="plus-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
               </button>
             </div>
           </div>
@@ -1842,25 +1915,25 @@
       const isCurrent = currentTrack && (t.title || '').trim().toLowerCase() === currentTitle;
       const isLiked = isTrackLiked(t);
       const encoded = JSON.stringify(t).replace(/"/g, '&quot;');
-      const widthClass = isCarousel ? 'w-36 sm:w-44 md:w-48 flex-shrink-0' : 'w-full';
+      const widthClass = isCarousel ? 'w-32 sm:w-44 md:w-48 flex-shrink-0' : 'w-full';
       const highRes = getHighResCover(t.cover);
 
       return `
-        <div onclick="playRealTrack(${encoded})" class="${widthClass} group bg-[#181818] hover:bg-[#282828] p-3 md:p-3.5 rounded-xl transition-all duration-300 cursor-pointer flex flex-col relative shadow-lg hover:shadow-2xl border border-white/5">
-          <div class="relative w-full aspect-square mb-3 rounded-lg overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
+        <div onclick="playRealTrack(${encoded})" class="${widthClass} group bg-[#181818] hover:bg-[#282828] p-2.5 sm:p-3.5 rounded-xl transition-all duration-300 cursor-pointer flex flex-col relative shadow-lg hover:shadow-2xl border ${isCurrent ? 'border-spotify-green/50 ring-1 ring-spotify-green/40' : 'border-white/5'}">
+          <div class="relative w-full aspect-square mb-2.5 rounded-lg overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] bg-zinc-900">
             <img src="${highRes}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${t.title}" loading="lazy">
-            <div class="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 z-10">
-              <svg class="w-5 h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <div class="absolute bottom-2 right-2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-spotify-green text-black flex items-center justify-center shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 z-10">
+              <svg class="w-4 h-4 sm:w-5 sm:h-5 fill-black ml-0.5" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
             </div>
-            <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all ${isLiked ? '!opacity-100 text-spotify-green' : 'opacity-0 group-hover:opacity-100'} z-10">
-              <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
+            <button onclick="event.stopPropagation(); toggleLikeTrack(${encoded})" title="${isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris'}" class="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all ${isLiked ? '!opacity-100 text-spotify-green' : 'opacity-0 group-hover:opacity-100'} z-10">
+              <i data-lucide="heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLiked ? 'fill-spotify-green text-spotify-green' : ''}"></i>
             </button>
-            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="absolute top-2.5 left-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all opacity-0 group-hover:opacity-100 hover:text-spotify-green z-10">
-              <i data-lucide="plus" class="w-4 h-4"></i>
+            <button onclick="event.stopPropagation(); openAddToPlaylistModal(${encoded})" title="Ajouter à une playlist" class="absolute top-2 left-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur transition-all opacity-0 group-hover:opacity-100 hover:text-spotify-green z-10">
+              <i data-lucide="plus" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
           </div>
-          <h3 class="text-sm font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
-          <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-xs text-zinc-400 hover:text-white hover:underline cursor-pointer line-clamp-1 mt-1 font-medium" title="${t.artist}">${t.artist}</p>
+          <h3 class="text-xs sm:text-sm font-bold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'} group-hover:underline" title="${t.title}">${t.title}</h3>
+          <p onclick="event.stopPropagation(); viewArtistByName('${(t.artist || '').replace(/'/g, "\\'")}')" class="text-[11px] sm:text-xs text-zinc-400 hover:text-white hover:underline cursor-pointer truncate mt-0.5 font-medium" title="${t.artist}">${t.artist}</p>
         </div>
       `;
     }
@@ -3098,29 +3171,44 @@
       const spinner = document.getElementById('svg-spinner');
       const play = document.getElementById('svg-play');
       const pause = document.getElementById('svg-pause');
+      const spMob = document.getElementById('svg-spinner-mob');
+      const pMob = document.getElementById('svg-play-mob');
+      const paMob = document.getElementById('svg-pause-mob');
       if (!spinner) return;
 
       if (buffering) {
         spinner.classList.remove('hidden');
         if (play) play.classList.add('hidden');
         if (pause) pause.classList.add('hidden');
+        if (spMob) spMob.classList.remove('hidden');
+        if (pMob) pMob.classList.add('hidden');
+        if (paMob) paMob.classList.add('hidden');
+
         bufferingSafetyTimeout = setTimeout(() => {
           isBuffering = false;
           spinner.classList.add('hidden');
+          if (spMob) spMob.classList.add('hidden');
           if (isPlaying) {
             if (pause) pause.classList.remove('hidden');
+            if (paMob) paMob.classList.remove('hidden');
           } else {
             if (play) play.classList.remove('hidden');
+            if (pMob) pMob.classList.remove('hidden');
           }
         }, 6000);
       } else {
         spinner.classList.add('hidden');
+        if (spMob) spMob.classList.add('hidden');
         if (isPlaying) {
           if (pause) pause.classList.remove('hidden');
           if (play) play.classList.add('hidden');
+          if (paMob) paMob.classList.remove('hidden');
+          if (pMob) pMob.classList.add('hidden');
         } else {
           if (play) play.classList.remove('hidden');
           if (pause) pause.classList.add('hidden');
+          if (pMob) pMob.classList.remove('hidden');
+          if (paMob) paMob.classList.add('hidden');
         }
       }
     }
@@ -3155,6 +3243,8 @@
       const pa1 = document.getElementById('svg-pause');
       const p2 = document.getElementById('full-svg-play');
       const pa2 = document.getElementById('full-svg-pause');
+      const pMob = document.getElementById('svg-play-mob');
+      const paMob = document.getElementById('svg-pause-mob');
 
       if (p1 && pa1) {
         if (playing) {
@@ -3172,6 +3262,15 @@
         } else {
           pa2.classList.add('hidden');
           p2.classList.remove('hidden');
+        }
+      }
+      if (pMob && paMob) {
+        if (playing) {
+          pMob.classList.add('hidden');
+          paMob.classList.remove('hidden');
+        } else {
+          paMob.classList.add('hidden');
+          pMob.classList.remove('hidden');
         }
       }
 
@@ -3410,10 +3509,12 @@
       const pct = dur > 0 ? (target / dur) * 100 : 0;
       const pb = document.getElementById('progress-bar');
       const fpb = document.getElementById('full-progress-bar');
+      const mpb = document.getElementById('mobile-progress-bar');
       const ct = document.getElementById('current-time');
       const fct = document.getElementById('full-current-time');
       if (pb) pb.style.width = `${pct}%`;
       if (fpb) fpb.style.width = `${pct}%`;
+      if (mpb) mpb.style.width = `${pct}%`;
       if (ct) ct.innerText = formatTime(target);
       if (fct) fct.innerText = formatTime(target);
     }
@@ -3434,8 +3535,12 @@
             const dur = getPlaybackDuration();
             if (dur > 0) {
               const pct = (cur / dur) * 100;
-              document.getElementById('progress-bar').style.width = `${pct}%`;
-              document.getElementById('full-progress-bar').style.width = `${pct}%`;
+              const pb = document.getElementById('progress-bar');
+              const fpb = document.getElementById('full-progress-bar');
+              const mpb = document.getElementById('mobile-progress-bar');
+              if (pb) pb.style.width = `${pct}%`;
+              if (fpb) fpb.style.width = `${pct}%`;
+              if (mpb) mpb.style.width = `${pct}%`;
               document.getElementById('current-time').innerText = formatTime(cur);
               document.getElementById('full-current-time').innerText = formatTime(cur);
               document.getElementById('duration-time').innerText = formatTime(dur);
@@ -3463,7 +3568,12 @@
             if (cur > dur) cur = dur;
           }
           const pct = dur > 0 ? (cur / dur) * 100 : 0;
-          document.getElementById('progress-bar').style.width = `${pct}%`;
+          const pb = document.getElementById('progress-bar');
+          const fpb = document.getElementById('full-progress-bar');
+          const mpb = document.getElementById('mobile-progress-bar');
+          if (pb) pb.style.width = `${pct}%`;
+          if (fpb) fpb.style.width = `${pct}%`;
+          if (mpb) mpb.style.width = `${pct}%`;
           document.getElementById('full-progress-bar').style.width = `${pct}%`;
           document.getElementById('current-time').innerText = formatTime(cur);
           document.getElementById('full-current-time').innerText = formatTime(cur);
@@ -4281,6 +4391,30 @@
       const savedTheme = localStorage.getItem('spotiwave_theme') || 'vert';
       applyTheme(savedTheme);
     }
+
+    /* HEADER DROPDOWN MENU */
+    function toggleHeaderMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('header-dropdown-menu');
+      if (!menu) return;
+      menu.classList.toggle('hidden');
+      refreshIcons();
+    }
+
+    function closeHeaderMenu() {
+      const menu = document.getElementById('header-dropdown-menu');
+      if (menu) menu.classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('header-dropdown-menu');
+      const btn = document.getElementById('header-menu-btn');
+      if (menu && !menu.classList.contains('hidden')) {
+        if (!menu.contains(e.target) && !btn?.contains(e.target)) {
+          menu.classList.add('hidden');
+        }
+      }
+    });
   </script>
 </body>
 </html>
