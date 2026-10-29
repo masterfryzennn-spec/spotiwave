@@ -202,7 +202,9 @@
       --accent-hover: #1ed760;
       --accent-rgb: 29, 185, 84;
       --bg-body: #000000;
-      --bg-sidebar: #000000;
+      --bg-sidebar: #0b130e;
+      --bg-sidebar-card: #132017;
+      --bg-sidebar-hover: #1b2d21;
       --bg-main-gradient: linear-gradient(to bottom, #18181b, #121212);
       --bg-header: rgba(9, 9, 11, 0.4);
       --bg-footer: #09090b;
@@ -220,7 +222,31 @@
     }
     #sidebar {
       background-color: var(--bg-sidebar, #000000) !important;
-      transition: background-color 0.3s ease;
+      border-right: 1px solid var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    #sidebar nav button {
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    #sidebar #nav-btn-home {
+      background-color: var(--bg-sidebar-card, #181818) !important;
+      color: var(--text-main, #ffffff) !important;
+    }
+    #sidebar nav button:hover {
+      background-color: var(--bg-sidebar-hover, #282828) !important;
+    }
+    #sidebar .bg-spotify-dark {
+      background-color: var(--bg-sidebar-card, #121212) !important;
+      border-color: var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    #sidebar div[class*="bg-zinc-900/70"] {
+      background-color: var(--bg-sidebar-card, rgba(24, 24, 27, 0.7)) !important;
+      border-color: var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    #sidebar div[class*="bg-zinc-900/70"]:hover {
+      background-color: var(--bg-sidebar-hover, #282828) !important;
     }
     main {
       background: var(--bg-main-gradient, linear-gradient(to bottom, #18181b, #121212)) !important;
@@ -248,7 +274,9 @@
       --accent-hover: #c084fc;
       --accent-rgb: 168, 85, 247;
       --bg-body: #090514;
-      --bg-sidebar: #070310;
+      --bg-sidebar: #130a26;
+      --bg-sidebar-card: #1d0f38;
+      --bg-sidebar-hover: #29154f;
       --bg-main-gradient: linear-gradient(to bottom, #231245, #0f0724);
       --bg-header: rgba(15, 7, 36, 0.6);
       --bg-footer: #0b0518;
@@ -265,7 +293,9 @@
       --accent-hover: #f87171;
       --accent-rgb: 239, 68, 68;
       --bg-body: #100404;
-      --bg-sidebar: #0a0202;
+      --bg-sidebar: #180505;
+      --bg-sidebar-card: #280a0a;
+      --bg-sidebar-hover: #3d1010;
       --bg-main-gradient: linear-gradient(to bottom, #3b0d0d, #140505);
       --bg-header: rgba(20, 5, 5, 0.6);
       --bg-footer: #0e0303;
@@ -282,7 +312,9 @@
       --accent-hover: #38bdf8;
       --accent-rgb: 14, 165, 233;
       --bg-body: #030d17;
-      --bg-sidebar: #020810;
+      --bg-sidebar: #041423;
+      --bg-sidebar-card: #08233a;
+      --bg-sidebar-hover: #0d3252;
       --bg-main-gradient: linear-gradient(to bottom, #07263e, #041423);
       --bg-header: rgba(4, 20, 35, 0.6);
       --bg-footer: #030f1c;
@@ -299,7 +331,9 @@
       --accent-hover: #60a5fa;
       --accent-rgb: 59, 130, 246;
       --bg-body: #050917;
-      --bg-sidebar: #030510;
+      --bg-sidebar: #070d24;
+      --bg-sidebar-card: #0e1b42;
+      --bg-sidebar-hover: #15265b;
       --bg-main-gradient: linear-gradient(to bottom, #0e1e4a, #070d24);
       --bg-header: rgba(7, 13, 36, 0.6);
       --bg-footer: #050a1c;
@@ -316,7 +350,9 @@
       --accent-hover: #cbd5e1;
       --accent-rgb: 148, 163, 184;
       --bg-body: #111215;
-      --bg-sidebar: #0c0d0f;
+      --bg-sidebar: #121417;
+      --bg-sidebar-card: #1c1f24;
+      --bg-sidebar-hover: #272b33;
       --bg-main-gradient: linear-gradient(to bottom, #23262d, #16181d);
       --bg-header: rgba(22, 24, 29, 0.6);
       --bg-footer: #121316;
@@ -334,6 +370,8 @@
       --accent-rgb: 34, 197, 94;
       --bg-body: #000000;
       --bg-sidebar: #000000;
+      --bg-sidebar-card: #0c0c0c;
+      --bg-sidebar-hover: #181818;
       --bg-main-gradient: linear-gradient(to bottom, #080808, #000000);
       --bg-header: rgba(0, 0, 0, 0.85);
       --bg-footer: #000000;
@@ -350,7 +388,9 @@
       --accent-hover: #1d4ed8;
       --accent-rgb: 37, 99, 235;
       --bg-body: #f8fafc;
-      --bg-sidebar: #ffffff;
+      --bg-sidebar: #f8fafc;
+      --bg-sidebar-card: #ffffff;
+      --bg-sidebar-hover: #f1f5f9;
       --bg-main-gradient: linear-gradient(to bottom, #f1f5f9, #ffffff);
       --bg-header: rgba(255, 255, 255, 0.85);
       --bg-footer: #ffffff;
@@ -421,7 +461,9 @@
       --accent-hover: #1ed760;
       --accent-rgb: 29, 185, 84;
       --bg-body: #000000;
-      --bg-sidebar: #000000;
+      --bg-sidebar: #0b130e;
+      --bg-sidebar-card: #132017;
+      --bg-sidebar-hover: #1b2d21;
       --bg-main-gradient: linear-gradient(to bottom, #18181b, #121212);
       --bg-header: rgba(9, 9, 11, 0.4);
       --bg-footer: #09090b;
@@ -484,10 +526,7 @@
           <i data-lucide="search" class="w-5 h-5"></i>
           <span>Recherche</span>
         </button>
-        <button onclick="openThemeModal()" id="nav-btn-theme" class="w-full flex items-center gap-4 px-3 py-2 rounded-lg text-spotify-subtext font-medium hover:text-white transition hover:bg-zinc-900/50 cursor-pointer">
-          <i data-lucide="palette" class="w-5 h-5 text-spotify-green"></i>
-          <span>Thèmes</span>
-        </button>
+
       </nav>
 
       <!-- PLAYLISTS / BIBLIOTHÈQUE SECTION -->
@@ -533,7 +572,7 @@
       
       <!-- TOP BAR -->
       <header class="h-16 flex items-center justify-between px-4 md:px-8 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10 border-b border-white/5">
-        <div class="flex items-center gap-2.5 flex-1">
+        <div class="flex items-center gap-2.5 flex-1 mr-4 md:mr-8 max-w-xl">
           <div class="relative w-full">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
             <input 
@@ -549,7 +588,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 relative">
+        <div class="flex items-center gap-2.5 md:gap-3.5 relative">
           <!-- Button Themes in Header (Desktop) -->
           <button onclick="openThemeModal()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition cursor-pointer" title="Changer le thème">
             <i data-lucide="palette" class="w-3.5 h-3.5 text-spotify-green"></i>
@@ -573,13 +612,16 @@
           </button>
 
           <!-- DROPDOWN MENU BUTTON (Clean Mobile & Desktop Menu) -->
-          <div class="relative">
+          <div class="relative ml-2 sm:ml-3">
             <button onclick="toggleHeaderMenu(event)" id="header-menu-btn" class="w-9 h-9 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-white flex items-center justify-center border border-white/10 transition active:scale-95 cursor-pointer flex-shrink-0" title="Menu et options">
               <i data-lucide="more-horizontal" class="w-5 h-5"></i>
             </button>
 
-            <!-- DROPDOWN MENU SHEET -->
-            <div id="header-dropdown-menu" class="hidden absolute right-0 top-11 w-64 bg-zinc-900/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl p-1.5 z-50 text-xs space-y-0.5">
+            <!-- BACKDROP FOR MOBILE DROPDOWN -->
+            <div id="header-dropdown-backdrop" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-40 transition-opacity" onclick="closeHeaderMenu()"></div>
+
+            <!-- DROPDOWN MENU SHEET (Solid Opaque, No Screen Bleed-Through) -->
+            <div id="header-dropdown-menu" style="background-color: #18181b !important;" class="hidden absolute right-0 top-12 w-64 bg-[#18181b] border border-white/20 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-2 z-50 text-xs space-y-1">
               <button onclick="closeHeaderMenu(); openThemeModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white font-medium transition cursor-pointer text-left">
                 <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
                   <i data-lucide="palette" class="w-4 h-4"></i>
@@ -657,7 +699,12 @@
             <img id="detail-playlist-cover" src="" class="w-44 h-44 sm:w-52 sm:h-52 rounded-md object-cover shadow-[0_12px_36px_rgba(0,0,0,0.7)] flex-shrink-0 border border-white/10" alt="Cover">
             <div class="flex-1 text-center sm:text-left space-y-2">
               <span id="detail-playlist-badge" class="text-xs uppercase font-extrabold tracking-widest text-zinc-300">Playlist</span>
-              <h1 id="detail-playlist-title" class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">Titre</h1>
+              <div class="flex items-center justify-center sm:justify-start gap-3">
+                <h1 id="detail-playlist-title" class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">Titre</h1>
+                <button onclick="openRenamePlaylistModal()" id="rename-playlist-btn" class="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition cursor-pointer" title="Renommer la playlist">
+                  <i data-lucide="edit-3" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </button>
+              </div>
               <div class="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-zinc-400 font-medium pt-1">
                 <span id="detail-playlist-meta">0 morceau</span>
               </div>
@@ -678,6 +725,10 @@
             <button onclick="shareCurrentPlaylist()" id="share-playlist-btn" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Partager cette playlist">
               <i data-lucide="share-2" class="w-4 h-4 text-spotify-green"></i>
               <span>Partager</span>
+            </button>
+            <button onclick="openRenamePlaylistModal()" id="rename-playlist-btn-bar" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Renommer cette playlist">
+              <i data-lucide="edit-3" class="w-4 h-4 text-spotify-green"></i>
+              <span>Renommer</span>
             </button>
             <button onclick="saveSharedPlaylistToLibrary()" id="save-shared-playlist-btn" class="hidden px-4 py-2 rounded-full bg-spotify-green hover:bg-[#1fdf64] text-black text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95" title="Ajouter à ma bibliothèque">
               <i data-lucide="bookmark-plus" class="w-4 h-4"></i>
@@ -1045,10 +1096,7 @@
       <i data-lucide="library" class="w-5 h-5"></i>
       <span>Bibliothèque</span>
     </button>
-    <button onclick="openThemeModal()" class="flex flex-col items-center text-xs text-spotify-subtext hover:text-white gap-1">
-      <i data-lucide="palette" class="w-5 h-5 text-spotify-green"></i>
-      <span>Thèmes</span>
-    </button>
+
   </nav>
 
   <!-- FULLSCREEN PLAYER MODAL (iOS Style) -->
@@ -1181,6 +1229,27 @@
       </div>
       <!-- Lines rendered here -->
       <div id="lyrics-lines-box" class="space-y-6 sm:space-y-8 pb-32"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: RENOMMER UNE PLAYLIST -->
+  <div id="rename-playlist-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeRenamePlaylistModal()">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Renommer la playlist</h3>
+        <button onclick="closeRenamePlaylistModal()" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <input 
+        type="text" 
+        id="rename-playlist-input" 
+        placeholder="Nouveau nom de la playlist" 
+        class="w-full bg-zinc-800 text-sm text-white px-4 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-spotify-green"
+        onkeydown="if(event.key === 'Enter') confirmRenamePlaylist()"
+      >
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeRenamePlaylistModal()" class="px-4 py-2 rounded-full text-xs font-semibold text-zinc-300 hover:text-white">Annuler</button>
+        <button onclick="confirmRenamePlaylist()" class="px-5 py-2 rounded-full bg-spotify-green text-black text-xs font-bold hover:bg-spotify-hover transition">Enregistrer</button>
+      </div>
     </div>
   </div>
 
@@ -2106,6 +2175,37 @@
       return `${tracks.length} titre${tracks.length > 1 ? 's' : ''} • ${mins} min`;
     }
 
+    /* RENAME PLAYLIST FUNCTIONS */
+    function openRenamePlaylistModal() {
+      const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+      if (!pl) return;
+      const input = document.getElementById('rename-playlist-input');
+      if (input) input.value = pl.title || '';
+      document.getElementById('rename-playlist-modal').classList.remove('hidden');
+      setTimeout(() => input?.focus(), 50);
+    }
+
+    function closeRenamePlaylistModal() {
+      document.getElementById('rename-playlist-modal').classList.add('hidden');
+    }
+
+    function confirmRenamePlaylist() {
+      const input = document.getElementById('rename-playlist-input');
+      const newName = (input?.value || '').trim();
+      if (!newName) {
+        showToast("Le nom de la playlist ne peut pas être vide");
+        return;
+      }
+      const pl = userPlaylists.find(p => p.id === activeViewingPlaylistId);
+      if (!pl) return;
+      pl.title = newName;
+      localStorage.setItem('spotiwave_playlists', JSON.stringify(userPlaylists));
+      document.getElementById('detail-playlist-title').innerText = newName;
+      renderPlaylistsSidebar();
+      closeRenamePlaylistModal();
+      showToast(`Playlist renommée en "${newName}"`);
+    }
+
     function viewLikedSongsPlaylist() {
       activeViewingPlaylistId = 'liked';
       renderPlaylistsSidebar();
@@ -2127,6 +2227,8 @@
       document.getElementById('delete-playlist-btn').classList.add('hidden');
       document.getElementById('save-shared-playlist-btn').classList.add('hidden');
       document.getElementById('share-playlist-btn').classList.remove('hidden');
+      document.getElementById('rename-playlist-btn')?.classList.add('hidden');
+      document.getElementById('rename-playlist-btn-bar')?.classList.add('hidden');
 
       renderPlaylistTracksTable(likedTracks, true);
       refreshIcons();
@@ -2156,6 +2258,8 @@
       document.getElementById('delete-playlist-btn').classList.remove('hidden');
       document.getElementById('save-shared-playlist-btn').classList.add('hidden');
       document.getElementById('share-playlist-btn').classList.remove('hidden');
+      document.getElementById('rename-playlist-btn')?.classList.remove('hidden');
+      document.getElementById('rename-playlist-btn-bar')?.classList.remove('hidden');
 
       renderPlaylistTracksTable(pl.tracks || [], false);
       refreshIcons();
@@ -4514,14 +4618,24 @@
     function toggleHeaderMenu(e) {
       if (e) e.stopPropagation();
       const menu = document.getElementById('header-dropdown-menu');
+      const backdrop = document.getElementById('header-dropdown-backdrop');
       if (!menu) return;
-      menu.classList.toggle('hidden');
+      const isHidden = menu.classList.contains('hidden');
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+      } else {
+        menu.classList.add('hidden');
+        if (backdrop) backdrop.classList.add('hidden');
+      }
       refreshIcons();
     }
 
     function closeHeaderMenu() {
       const menu = document.getElementById('header-dropdown-menu');
+      const backdrop = document.getElementById('header-dropdown-backdrop');
       if (menu) menu.classList.add('hidden');
+      if (backdrop) backdrop.classList.add('hidden');
     }
 
     document.addEventListener('click', (e) => {
@@ -4529,7 +4643,7 @@
       const btn = document.getElementById('header-menu-btn');
       if (menu && !menu.classList.contains('hidden')) {
         if (!menu.contains(e.target) && !btn?.contains(e.target)) {
-          menu.classList.add('hidden');
+          closeHeaderMenu();
         }
       }
     });
